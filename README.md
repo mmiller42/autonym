@@ -1,4 +1,5 @@
 # Autonym
+## ❗❗❗Alpha release! Many features untested and undocumented, all are incomplete and unstable.❗❗❗
 A KISS JSON REST API framework that can be mounted to your Express application.
 
 Autonym is another framework built on top of Express to simplify building REST APIs for your resources. However, its philosophy sets it apart from most other Node.js API frameworks.

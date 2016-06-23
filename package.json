@@ -1,10 +1,10 @@
 {
   "name": "autonym",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A KISS JSON REST API framework that can be mounted to your Express application.",
   "main": "./lib/index.js",
   "scripts": {
-    "test": "mocha -b",
+    "test": "mocha -b --compilers js:babel-register ./tests/{,**/}*.spec.js",
     "build": "babel lib -d ./build",
     "serve": "node ./build/app.js",
     "release": "./publi.sh"
@@ -36,7 +36,7 @@
     "babel-preset-stage-2": "^6.5.0",
     "mocha": "^2.5.3",
     "should": "^9.0.2",
-    "source-map-support": "^0.4.0"
+    "sinon": "^1.17.4"
   },
   "dependencies": {
     "ajv": "^4.1.3",
