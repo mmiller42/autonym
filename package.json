@@ -1,0 +1,53 @@
+{
+  "name": "autonym",
+  "version": "0.5.0",
+  "description": "A KISS JSON REST API framework that can be mounted to your Express application.",
+  "main": "./lib/index.js",
+  "scripts": {
+    "test": "mocha -b --compilers js:babel-register ./tests/{,**/}*.spec.js",
+    "build": "babel lib -d ./build",
+    "serve": "node ./build/app.js",
+    "release": "./publi.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mmiller42/autonym.git"
+  },
+  "keywords": [
+    "autonym",
+    "kiss",
+    "json",
+    "rest",
+    "api",
+    "express",
+    "middleware",
+    "schema",
+    "es6"
+  ],
+  "author": "Matt Miller",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mmiller42/autonym/issues"
+  },
+  "homepage": "https://github.com/mmiller42/autonym#readme",
+  "devDependencies": {
+    "babel-cli": "^6.10.1",
+    "babel-preset-node5": "^11.1.0",
+    "babel-preset-stage-2": "^6.5.0",
+    "mocha": "^2.5.3",
+    "should": "^9.0.2",
+    "sinon": "^1.17.4"
+  },
+  "dependencies": {
+    "ajv": "^4.1.3",
+    "async-boolean-expression-evaluator": "^1.1.1",
+    "autonym-client-errors": "^0.2.1",
+    "express": "^4.14.0",
+    "http-status-codes": "^1.0.6",
+    "inflection": "^1.10.0",
+    "instance-of-name": "^0.1.0",
+    "lodash": "^4.13.1",
+    "maybe-promise-factory": "^1.0.0",
+    "require-all": "^2.0.0"
+  }
+}
