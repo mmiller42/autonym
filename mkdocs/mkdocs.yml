@@ -1,0 +1,8 @@
+site_dir: ../docs
+site_name: Autonym
+site_url: https://autonym.io
+repo_url: https://github.com/mmiller42/autonym
+theme: cinder
+pages:
+- Intro: index.md
+- Getting Started: getting-started.md
