@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <link rel="canonical" href="https://autonym.io/autonym-responder/"> 
+    <link rel="shortcut icon" href="../img/favicon.ico">
+
+    <title>AutonymResponder - Autonym</title>
+
+    <link href="../css/bootstrap-custom.min.css" rel="stylesheet">
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/font-hack/2.018/css/hack.min.css">
+    <link href='//fonts.googleapis.com/css?family=PT+Sans:400,400italic,700,700italic&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
+    <link href='//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,300,600,700&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
+    <link href="../css/base.css" rel="stylesheet">
+    <link href="../css/cinder.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/highlight.css">
+
+
+    <link href="../css/custom.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.5.18/webfont.js"></script>
+    <script>
+    WebFont.load({
+        google: {
+            families: ['Open Sans', 'PT Sans']
+        }
+    });
+    </script>
+
+    
+</head>
+
+<body>
+
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            
+            <!-- Expander button -->
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            
+
+            <!-- Main title -->
+            <a class="navbar-brand" href="..">Autonym</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+            
+                <!-- Main navigation -->
+                <ul class="nav navbar-nav">
+                
+                
+                    <li >
+                        <a href="..">Intro</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="../getting-started/">Getting Started</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="../req-and-res/">req & res</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="../autonym/">Autonym</a>
+                    </li>
+                
+                
+                
+                    <li class="active">
+                        <a href="./">AutonymResponder</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="../model/">Model</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="../client-errors/">Client Errors</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="../creating-a-store/">Creating a Store</a>
+                    </li>
+                
+                
+                </ul>
+            
+
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
+                        <i class="fa fa-search"></i> Search
+                    </a>
+                </li>
+                
+                    <li >
+                        <a rel="next" href="../autonym/">
+                            <i class="fa fa-arrow-left"></i> Previous
+                        </a>
+                    </li>
+                    <li >
+                        <a rel="prev" href="../model/">
+                            Next <i class="fa fa-arrow-right"></i>
+                        </a>
+                    </li>
+                
+                
+                    <li>
+                        <a href="https://github.com/mmiller42/autonym">
+                            
+                                <i class="fa fa-github"></i>
+                            
+                            GitHub
+                        </a>
+                    </li>
+                
+            </ul>
+        </div>
+    </div>
+</div>
+
+    <div class="container">
+        
+        <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+    
+        <li class="first-level active"><a href="#autonymresponder">AutonymResponder</a></li>
+        
+            <li class="second-level"><a href="#constructor-arguments">Constructor arguments</a></li>
+            
+        
+            <li class="second-level"><a href="#what-the-middleware-does-with-the-response">What the middleware does with the response</a></li>
+            
+        
+            <li class="second-level"><a href="#autonymresponder-api">AutonymResponder API</a></li>
+            
+                <li class="third-level"><a href="#constructorhandleerror">#constructor(handleError)</a></li>
+            
+                <li class="third-level"><a href="#handleerror">#handleError</a></li>
+            
+                <li class="third-level"><a href="#middleware">#middleware</a></li>
+            
+        
+    
+    </ul>
+</div></div>
+        <div class="col-md-9" role="main">
+
+<h1 id="autonymresponder">AutonymResponder</h1>
+<p>The AutonymResponder will dispatch a response to the client. Once Autonym has finished handling the request, it sets
+some properties on the <code>req</code> object (or passes an error along) which will be consumed by the AutonymResponder, which
+determines what response to send. AutonymResponder will also try to determine if any error was due to bad client data or
+an issue on your server and send the appropriate response.</p>
+<h2 id="constructor-arguments">Constructor arguments</h2>
+<p>The AutonymResponder constructor takes one optional argument, which is a function to handle errors. The function is
+executed any time an error occurs (whether it is a client or system error) so that your app can take appropriate action,
+such as logging the event, triggering an alert, or crashing and restarting.</p>
+<p>This function just takes the error object as its only parameter.</p>
+<p>If no argument is supplied, then Autonym will simply pass the error to the next error-handling middleware in the Express
+stack. Often this handler is the default one provided by Express, which will log the exception to stderr and carry on.</p>
+<h2 id="what-the-middleware-does-with-the-response">What the middleware does with the response</h2>
+<p>If an error occurred, the error handler function will be passed the error. If there was no error handler function
+provided, it will pass the error to the next middleware.</p>
+<p>If the response is not already sent, then AutonymResponder will:</p>
+<ol>
+<li>Check for a property named <code>data</code> on the response object.</li>
+<li>If it exists and is not null, it will send the response, with a JSON body set to the value of <code>res.data</code>.<ol>
+<li>If <code>res.data</code> is null, it will send the response with no body.</li>
+</ol>
+</li>
+<li>Otherwise, it will return a 404 error.</li>
+</ol>
+<h2 id="autonymresponder-api">AutonymResponder API</h2>
+<h3 id="constructorhandleerror">#constructor(handleError)</h3>
+<p>Creates a new instance of AutonymResponder, optionally taking a function to handle errors.</p>
+<h3 id="handleerror">#handleError</h3>
+<p>The function supplied to the constructor, or <code>undefined</code>. Can be changed at runtime.</p>
+<h3 id="middleware">#middleware</h3>
+<p>Express middleware that can be mounted to your application to send the response and capture errors.</p></div>
+        
+    </div>
+
+    <footer class="col-md-12 text-center">
+        <hr>
+        <p>
+        <small>Autonym © <a href="https://mmiller.me/">Matt Miller</a> and licensed under the <a href="https://github.com/mmiller42/autonym/blob/master/LICENSE">MIT license</a><br></small>
+        
+        <small>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p></small>
+    </footer>
+
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../js/bootstrap-3.0.3.min.js"></script>
+    <script src="../js/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script>
+    var base_url = '..';
+    </script>
+    <script data-main="../mkdocs/js/search.js" src="../mkdocs/js/require.js"></script>
+    <script src="../js/base.js"></script>
+
+    <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="Search Modal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span aria-hidden="true">&times;</span>
+                        <span class="sr-only">Close</span>
+                    </button>
+                    <h4 class="modal-title" id="exampleModalLabel">Search</h4>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        From here you can search these documents. Enter your search terms below.
+                    </p>
+                    <form role="form">
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="Search..." id="mkdocs-search-query">
+                        </div>
+                    </form>
+                    <div id="mkdocs-search-results"></div>
+                </div>
+                <div class="modal-footer">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </body>
+
+</html>
