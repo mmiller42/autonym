@@ -1,0 +1,11 @@
+.navbar-nav.navbar-right li {
+	font-size: 0;
+}
+
+.navbar-nav.navbar-right li i {
+	font-size: 13px;
+}
+
+.navbar-nav.navbar-right li:not(:nth-child(1)) {
+	display: none;
+}
