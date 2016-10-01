@@ -1,6 +1,6 @@
 {
   "name": "autonym",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "A KISS JSON REST API framework that can be mounted to your Express application.",
   "main": "./lib/index.js",
   "scripts": {
@@ -29,7 +29,7 @@
   "bugs": {
     "url": "https://github.com/mmiller42/autonym/issues"
   },
-  "homepage": "https://github.com/mmiller42/autonym#readme",
+  "homepage": "https://autonym.io/",
   "devDependencies": {
     "babel-cli": "^6.10.1",
     "babel-preset-node5": "^11.1.0",
