@@ -186,7 +186,9 @@ A few things are going on here:
 
 * We created a new instance of the `Autonym` class, passing `__dirname` into the constructor. `__dirname` is a Node.js
   constant that refers to the absolute path to the currently executing file (i.e. the path to `./lib`). Autonym will
-  attempt to import various "components" from this given directory by searching for files that match a pattern.
+  attempt to import various "components" from this given directory by searching for files that match a pattern. Autonym
+  will read these components by a special set of rules, and you can find details about how it all works on the
+  [Autonym page](../autonym).
 
 * We mounted the `autonym.middleware` middleware onto the app. Now, all requests will pass through the instance of
   Autonym at this stage in the middleware stack. Of course, since we mounted it after our `app.get()` middleware (which
@@ -198,7 +200,8 @@ A few things are going on here:
   request, but the `autonymResponder.middleware` middleware will actually send it to the client. These are deliberately
   kept separate so that you can tweak the response however you like in between these two handlers. Note that the
   `AutonymResponder` constructor takes a `handleError` function. In addition to passing the error to the client, this
-  function can be used to capture and handle errors that happened during the request/response life cycle.
+  function can be used to capture and handle errors that happened during the request/response life cycle. More about the
+  AutonymResponder can be found on [its dedicated page](../autonym-responder).
 
 Autonym is now going to look for files in the directory we passed into the constructor, in this case the absolute path
 to `./lib`. Autonym will check for three subdirectories in the path provided to it: `models`, `policies`, and `schemas`.
@@ -250,9 +253,9 @@ that the `_find()` function was defined, so it will call it any time you make a 
 *must* return a promise and that promise *must* pass back an array. For now, that array is just static data.
 
 There are four other CRUD methods (`_create()`, `_findOne()`, `_findOneAndUpdate()`, `_findOneAndDelete()`) which are
-described in more detail in the API reference. Note that if any of them aren't set on your model, it's okay -- your user
-will just receive a method not allowed error. However, note that `_findOne()` *must* be set up in order for
-`_findOneAndUpdate()` and `_findOneAndDelete()` to work.
+described in more detail in the [Model API](../model#implementation-api). Note that if any of them aren't set on your
+model, it's okay -- your user will just receive a method not allowed error. However, note that `_findOne()` *must* be
+set up in order for `_findOneAndUpdate()` and `_findOneAndDelete()` to work.
 
 Go ahead! Hit `http://localhost:3000/people` in your browser or Postman and you should get back the array.
 
@@ -465,7 +468,7 @@ Here we'll walk through some changes we made:
 * The next condition checks if the error was derived from a class called `ClientError`. `ClientError` is a special class
   that Autonym uses for any errors that are the result of a bad request on behalf of the client. The app is totally fine,
   but the user got back an error message. Here, we're printing it out just for verbosity, but we could safely ignore
-  these errors.
+  these errors. You can read more about client errors [on their respective page](../client-errors).
 * Otherwise we'll continue with our default behavior and crash the app.
 
 ### Creating a policy
@@ -500,13 +503,14 @@ In this contrived example, our way of telling if the current user is the user be
 `ForbiddenError`. It is important that your policy throw some subclass from the autonym-client-errors package, such as
 `ForbiddenError`. If an internal error occurred (like a rejected database connection or a timeout), just throw it and
 AutonymResponder will return a 500 error and pass it onto your `handleError` method; but if the error just indicates
-something the client did wrong, always make sure to throw a subclass of ClientError.
+something the client did wrong, always make sure to throw a subclass of ClientError. You can read more about client
+errors on [their page](../client-errors).
 
 It doesn't matter what the function *returns*, unless it is a promise. If it's a promise, then the promise can resolve
 with anything, or reject and it will be treated just like the throw example.
 
 You may also have noticed the `req.resourceId` property, which is nonstandard on the `req` object in Express. Autonym
-aggregates the `req` object with many properties, which are documented in the API reference.
+aggregates the `req` object with many properties, which are documented on the [req & res](../req-and-res) page.
 
 Let's attach this policy to the `findOneAndUpdate` action, which we can do by modifying our schema.
 

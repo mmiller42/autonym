@@ -19,6 +19,9 @@
     <link href="../css/cinder.css" rel="stylesheet">
     <link rel="stylesheet" href="../css/highlight.css">
 
+
+    <link href="../css/custom.css" rel="stylesheet">
+
     <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
             <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
@@ -76,6 +79,42 @@
                     </li>
                 
                 
+                
+                    <li >
+                        <a href="../req-and-res/">req & res</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="../autonym/">Autonym</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="../autonym-responder/">AutonymResponder</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="../model/">Model</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="../client-errors/">Client Errors</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="../creating-a-store/">Creating a Store</a>
+                    </li>
+                
+                
                 </ul>
             
 
@@ -91,8 +130,8 @@
                             <i class="fa fa-arrow-left"></i> Previous
                         </a>
                     </li>
-                    <li class="disabled">
-                        <a rel="prev" >
+                    <li >
+                        <a rel="prev" href="../req-and-res/">
                             Next <i class="fa fa-arrow-right"></i>
                         </a>
                     </li>
@@ -303,7 +342,9 @@ http.createServer(app).listen(process.env.PORT, err =&gt; {
 <li>
 <p>We created a new instance of the <code>Autonym</code> class, passing <code>__dirname</code> into the constructor. <code>__dirname</code> is a Node.js
   constant that refers to the absolute path to the currently executing file (i.e. the path to <code>./lib</code>). Autonym will
-  attempt to import various "components" from this given directory by searching for files that match a pattern.</p>
+  attempt to import various "components" from this given directory by searching for files that match a pattern. Autonym
+  will read these components by a special set of rules, and you can find details about how it all works on the
+  <a href="../../autonym">Autonym page</a>.</p>
 </li>
 <li>
 <p>We mounted the <code>autonym.middleware</code> middleware onto the app. Now, all requests will pass through the instance of
@@ -317,7 +358,8 @@ http.createServer(app).listen(process.env.PORT, err =&gt; {
   request, but the <code>autonymResponder.middleware</code> middleware will actually send it to the client. These are deliberately
   kept separate so that you can tweak the response however you like in between these two handlers. Note that the
   <code>AutonymResponder</code> constructor takes a <code>handleError</code> function. In addition to passing the error to the client, this
-  function can be used to capture and handle errors that happened during the request/response life cycle.</p>
+  function can be used to capture and handle errors that happened during the request/response life cycle. More about the
+  AutonymResponder can be found on <a href="../../autonym-responder">its dedicated page</a>.</p>
 </li>
 </ul>
 <p>Autonym is now going to look for files in the directory we passed into the constructor, in this case the absolute path
@@ -363,9 +405,9 @@ export default Person;
 that the <code>_find()</code> function was defined, so it will call it any time you make a GET request to <code>/people</code>. Your function
 <em>must</em> return a promise and that promise <em>must</em> pass back an array. For now, that array is just static data.</p>
 <p>There are four other CRUD methods (<code>_create()</code>, <code>_findOne()</code>, <code>_findOneAndUpdate()</code>, <code>_findOneAndDelete()</code>) which are
-described in more detail in the API reference. Note that if any of them aren't set on your model, it's okay -- your user
-will just receive a method not allowed error. However, note that <code>_findOne()</code> <em>must</em> be set up in order for
-<code>_findOneAndUpdate()</code> and <code>_findOneAndDelete()</code> to work.</p>
+described in more detail in the <a href="../../model#implementation-api">Model API</a>. Note that if any of them aren't set on your
+model, it's okay -- your user will just receive a method not allowed error. However, note that <code>_findOne()</code> <em>must</em> be
+set up in order for <code>_findOneAndUpdate()</code> and <code>_findOneAndDelete()</code> to work.</p>
 <p>Go ahead! Hit <code>http://localhost:3000/people</code> in your browser or Postman and you should get back the array.</p>
 <p>Behind the scenes, Autonym processes a GET request, parses the incoming data, forwards the relevant parts of the request
 to <code>_find()</code>, then reformats the results and passes them onto the next middleware in the stack. In this case, the next
@@ -542,7 +584,7 @@ export default handleError;
 <li>The next condition checks if the error was derived from a class called <code>ClientError</code>. <code>ClientError</code> is a special class
   that Autonym uses for any errors that are the result of a bad request on behalf of the client. The app is totally fine,
   but the user got back an error message. Here, we're printing it out just for verbosity, but we could safely ignore
-  these errors.</li>
+  these errors. You can read more about client errors <a href="../../client-errors">on their respective page</a>.</li>
 <li>Otherwise we'll continue with our default behavior and crash the app.</li>
 </ul>
 <h3 id="creating-a-policy">Creating a policy</h3>
@@ -574,11 +616,12 @@ export default isSelf;
 <code>ForbiddenError</code>. It is important that your policy throw some subclass from the autonym-client-errors package, such as
 <code>ForbiddenError</code>. If an internal error occurred (like a rejected database connection or a timeout), just throw it and
 AutonymResponder will return a 500 error and pass it onto your <code>handleError</code> method; but if the error just indicates
-something the client did wrong, always make sure to throw a subclass of ClientError.</p>
+something the client did wrong, always make sure to throw a subclass of ClientError. You can read more about client
+errors on <a href="../../client-errors">their page</a>.</p>
 <p>It doesn't matter what the function <em>returns</em>, unless it is a promise. If it's a promise, then the promise can resolve
 with anything, or reject and it will be treated just like the throw example.</p>
 <p>You may also have noticed the <code>req.resourceId</code> property, which is nonstandard on the <code>req</code> object in Express. Autonym
-aggregates the <code>req</code> object with many properties, which are documented in the API reference.</p>
+aggregates the <code>req</code> object with many properties, which are documented on the <a href="../../req-and-res">req &amp; res</a> page.</p>
 <p>Let's attach this policy to the <code>findOneAndUpdate</code> action, which we can do by modifying our schema.</p>
 <pre><code class="json">// lib/schemas/person.schema.json
 
@@ -617,6 +660,8 @@ welcome!</p></div>
     <footer class="col-md-12 text-center">
         <hr>
         <p>
+        <small>Autonym © <a href="https://mmiller.me/">Matt Miller</a> and licensed under the <a href="https://github.com/mmiller42/autonym/blob/master/LICENSE">MIT license</a><br></small>
+        
         <small>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p></small>
     </footer>
 
