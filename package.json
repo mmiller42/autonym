@@ -1,6 +1,6 @@
 {
   "name": "autonym",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "A KISS JSON REST API framework that can be mounted to your Express application.",
   "main": "./lib/index.js",
   "scripts": {
