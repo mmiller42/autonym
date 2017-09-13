@@ -1,0 +1,50 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/node:latest
+    working_directory: ~/autonym
+
+    steps:
+      - checkout
+      - run:
+          name: Authenticate to npm registry
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+      - run:
+          name: Update npm
+          command: |
+            npm install npm@latest --no-save &&
+            sudo rm -rf /usr/local/lib/node_modules/npm &&
+            sudo mv node_modules/npm /usr/local/lib/node_modules/npm
+      - run:
+          name: Install greenkeeper-lockfile
+          command: sudo npm install -g greenkeeper-lockfile@1
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run:
+          name: Install dependencies
+          command: npm install
+      - run:
+          name: Update lockfile
+          command: greenkeeper-lockfile-update
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - run:
+          name: Build
+          command: npm run build
+      - run:
+          name: Test
+          command: npm test
+      - run:
+          name: Upload lockfile
+          command: greenkeeper-lockfile-upload
+      - deploy:
+          name: Publish
+          command: |
+            if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$"; then
+              npm publish
+            else
+              echo "No tag pushed, skipping deploy"
+            fi
