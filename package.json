@@ -10,11 +10,11 @@
     "build": "rm -rf lib && babel src --out-dir lib --source-maps --copy-files",
     "watch": "npm run build -- --watch",
     "prettier": "prettier --write '{src/**/*.{js,json},test/**/*.js,*.json}'",
-    "lint": "eslint src"
+    "lint": "eslint src test"
   },
   "lint-staged": {
     "*.{js,json}": ["prettier --write", "git add"],
-    "{src,test}/*.{js,json}": ["prettier --write", "eslint", "git add"]
+    "{src,test}/*.{js,json}": ["eslint", "git add"]
   },
   "engines": {
     "node": ">=4.3.0"
