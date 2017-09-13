@@ -79,7 +79,7 @@ export class StoreMiddleware {
   }
 
   _callStoreMethod(method, _req, _res, next) {
-    const meta = {}
+    const meta = this.getModel().getInitialMeta()
     const req = new Req(_req, this.getModel(), meta)
     const res = new Res(_res, this.getModel(), meta)
     this[`_${method}`](req, res, meta)
@@ -97,21 +97,19 @@ export class StoreMiddleware {
   }
 
   _find(req, res, meta) {
-    this._modelWithHooks.find(req.getQuery(), req.getFilters(), meta, [...arguments]).then(() => ({ status: Res.OK }))
+    this._modelWithHooks.find(req.getQuery(), meta, [...arguments]).then(() => ({ status: Res.OK }))
   }
 
   _findOne(req, res, meta) {
-    this._modelWithHooks.findOne(req.getId(), req.getFilters(), meta, [...arguments]).then(() => ({ status: Res.OK }))
+    this._modelWithHooks.findOne(req.getId(), meta, [...arguments]).then(() => ({ status: Res.OK }))
   }
 
   _findOneAndUpdate(req, res, meta) {
-    this._modelWithHooks
-      .findOneAndUpdate(req.getId(), req.getData(), req.getCompleteData(), req.getFilters(), meta, [...arguments])
-      .then(() => ({ status: Res.OK }))
+    this._modelWithHooks.findOneAndUpdate(req.getId(), req.getData(), req.getCompleteData(), meta, [...arguments]).then(() => ({ status: Res.OK }))
   }
 
   _findOneAndDelete(req, res, meta) {
-    this._modelWithHooks.findOneAndDelete(req.getId(), req.getFilters(), meta, [...arguments]).then(() => ({ status: Res.OK }))
+    this._modelWithHooks.findOneAndDelete(req.getId(), meta, [...arguments]).then(() => ({ status: Res.OK }))
   }
 }
 

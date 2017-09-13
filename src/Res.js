@@ -1,4 +1,5 @@
 import HTTP from 'http-status-codes'
+import { defaultsDeep, get, set } from 'lodash'
 
 export default class Res {
   static OK = HTTP.OK
@@ -23,7 +24,7 @@ export default class Res {
     if (!this.isPopulated()) {
       throw new ReferenceError('Cannot get response data before store method has been called.')
     }
-    return key ? this._data[key] : this._data
+    return key ? get(this._data, key) : this._data
   }
 
   setData(...args) {
@@ -33,10 +34,10 @@ export default class Res {
 
     if (args.length === 1) {
       const [data] = args
-      this._data = data
+      this._data = defaultsDeep(this._data, data)
     } else {
       const [key, value] = args
-      this._data[key] = value
+      set(this._data, key, value)
     }
 
     return this._data

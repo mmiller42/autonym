@@ -1,4 +1,4 @@
-import { cloneDeep, defaultsDeep } from 'lodash'
+import { cloneDeep, defaultsDeep, get, set } from 'lodash'
 
 export default class Req {
   constructor(raw, model, meta) {
@@ -9,7 +9,6 @@ export default class Req {
     this._model = model
     this._data = this.hasBody() ? cloneDeep(raw.body) : null
     this._originalData = null
-    this._filters = []
   }
 
   getRaw() {
@@ -20,7 +19,7 @@ export default class Req {
     if (!this.hasBody()) {
       throw new ReferenceError('Cannot get request data from readonly request.')
     }
-    return key ? this._data[key] : this._data
+    return key ? get(this._data, key) : this._data
   }
 
   setData(...args) {
@@ -30,10 +29,10 @@ export default class Req {
 
     if (args.length === 1) {
       const [data] = args
-      this._data = data
+      this._data = defaultsDeep(this._data, data)
     } else {
       const [key, value] = args
-      this._data[key] = value
+      set(this._data, key, value)
     }
 
     return this._data
@@ -51,21 +50,6 @@ export default class Req {
 
   getCompleteData() {
     return this.getOriginalData().then(data => defaultsDeep({}, this.getData(), data))
-  }
-
-  getFilters() {
-    return this._filters
-  }
-
-  addFilter(filter) {
-    if (this.isCreating()) {
-      throw new ReferenceError('Cannot add a filter to a create request.')
-    }
-    this._filters.push(filter)
-  }
-
-  removeFilter(filter) {
-    this._filters = this._filters.filter(filter)
   }
 
   getModel() {

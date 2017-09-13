@@ -23,8 +23,11 @@ export class Model {
     if (_config.init !== undefined && typeof _config.init !== 'function') {
       throw new TypeError('config.init parameter passed to autonym.model decorator must be a function or undefined.')
     }
-    if (!isPlainObject(_config.schema) && _config.schema !== null) {
+    if (_config.schema !== null && !isPlainObject(_config.schema)) {
       throw new TypeError('config.schema parameter passed to autonym.model decorator must be a JSON schema or explicitly null.')
+    }
+    if (_config.schema && _config.schema.type !== 'object') {
+      throw new TypeError('config.schema.type parameter passed to autonym.model decorator must be object.')
     }
     if (_config.ajvOptions !== undefined && !isPlainObject(_config.ajvOptions)) {
       throw new TypeError('config.ajvOptions parameter passed to autonym.model decorator must be a plain object or undefined.')
@@ -43,6 +46,9 @@ export class Model {
     }
     if (_config.unserialize !== undefined && typeof _config.unserialize !== 'function') {
       throw new TypeError('config.unserialize parameter passed to autonym.model decorator must be a function or undefined.')
+    }
+    if (_config.initialMeta !== undefined && !isPlainObject(_config.initialMeta)) {
+      throw new TypeError('config.initialMeta parameter passed to autonym.model decorator must be a plain object or undefined.')
     }
 
     this._checkForUnrecognizedProperties('config', _config, ['name', 'schema', 'ajvOptions', 'policies', 'store', 'route', 'serialize', 'unserialize'])
@@ -73,6 +79,7 @@ export class Model {
       route: pluralize(kebabCase(name)),
       serialize: cloneDeep,
       unserialize: cloneDeep,
+      initialMeta: {},
     })
 
     const { init } = config
@@ -126,6 +133,10 @@ export class Model {
     return this.getConfig().route
   }
 
+  getInitialMeta() {
+    return this.getConfig().initialMeta
+  }
+
   init() {
     if (!this._initialization) {
       this._initialization = this.getConfig().init()
@@ -137,32 +148,32 @@ export class Model {
     return this._callWithHooks(data, hookArgs, () => this.getConfig().store.create(this.serialize(data), meta)).then(_data => this.unserialize(_data))
   }
 
-  find(query, filters, meta, hookArgs) {
+  find(query, meta, hookArgs) {
     return this._callWithHooks(null, hookArgs, () =>
       this.getConfig()
-        .store.find(query, filters, meta)
+        .store.find(query, meta)
         .then(dataSet => dataSet.map(data => this.unserialize(data)))
     )
   }
 
-  findOne(id, filters, meta, hookArgs) {
+  findOne(id, meta, hookArgs) {
     return this._callWithHooks(null, hookArgs, () =>
       this.getConfig()
-        .store.findOne(id, filters, meta)
+        .store.findOne(id, meta)
         .then(data => this.unserialize(data))
     )
   }
 
-  findOneAndUpdate(id, data, completeData, filters, meta, hookArgs) {
+  findOneAndUpdate(id, data, completeData, meta, hookArgs) {
     return this._callWithHooks(completeData, hookArgs, () =>
       this.getConfig()
-        .store.findOneAndUpdate(id, this.serialize(data), this.serialize(completeData), filters, meta)
+        .store.findOneAndUpdate(id, this.serialize(data), this.serialize(completeData), meta)
         .then(_data => this.unserialize(_data))
     )
   }
 
-  findOneAndDelete(id, filters, meta, hookArgs) {
-    return this._callWithHooks(null, hookArgs, () => this.getConfig().store.findOneAndDelete(id, filters, meta))
+  findOneAndDelete(id, meta, hookArgs) {
+    return this._callWithHooks(null, hookArgs, () => this.getConfig().store.findOneAndDelete(id, meta))
   }
 
   serialize(data) {
