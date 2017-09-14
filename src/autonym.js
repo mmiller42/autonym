@@ -1,21 +1,30 @@
 import { Router as createRouter } from 'express'
-import { isPlainObject } from 'lodash'
+import { isPlainObject, values } from 'lodash'
 import { Model } from './model'
 import errorMiddleware from './middleware/errorMiddleware'
 import modelMiddleware from './middleware/modelMiddleware'
+import { checkForUnrecognizedProperties } from './utils/helpers'
 
 export class Autonym {
-  static _normalizeConfig(config) {
-    if (!isPlainObject(config)) {
-      throw new TypeError('config parameter passed to autonym function must be a plain object.')
+  static _normalizeConfig(_config) {
+    if (!isPlainObject(_config)) {
+      throw new TypeError('config parameter must be a plain object.')
     }
+    if (!Array.isArray(_config.models) || !isPlainObject(_config.models)) {
+      throw new TypeError('config.models parameter must be an array.')
+    }
+
+    checkForUnrecognizedProperties('config', _config, ['models'])
+
+    const config = { ..._config }
     if (!Array.isArray(config.models)) {
-      throw new TypeError('config.models parameter passed to autonym function must be an array.')
+      config.models = values(config.models)
     }
+
     config.models.forEach((model, i) => {
       if (!(model instanceof Model)) {
         throw new TypeError(
-          `config.models parameter passed to autonym function must be an array of Model instances, but the model at index ${i} is not. Did you forget to wrap your model definition in the autonym.model decorator?`
+          `config.models parameter must be an array of Model instances, but the model at index ${i} is not. Did you forget to wrap your model definition in the autonym.model decorator?`
         )
       }
     })

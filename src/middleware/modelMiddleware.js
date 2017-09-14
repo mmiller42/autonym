@@ -5,7 +5,7 @@ import { Router as createRouter } from 'express'
 import Req from '../Req'
 import Res from '../Res'
 import { POST_STORE } from '../utils/policyHookConstants'
-import AutonymError from '../utils/AutonymError'
+import AutonymError from '../AutonymError'
 
 const maybePromise = maybePromiseFactory()
 
@@ -25,7 +25,7 @@ export class ModelMiddleware {
   }
 
   _createPolicyHooks() {
-    return mapValues(this.getModel().getConfig().policies, (methods, hook) =>
+    return mapValues(this.getModel().getPolicies(), (methods, hook) =>
       mapValues(methods, expression => (req, res, meta, data) => {
         if (hook === POST_STORE) {
           res.setData(req.isFindingOneAndDeleting() ? { id: req.getId() } : data)
@@ -105,7 +105,9 @@ export class ModelMiddleware {
   }
 
   _findOneAndUpdate(req, res, meta) {
-    this._modelWithHooks.findOneAndUpdate(req.getId(), req.getData(), req.getCompleteData(), meta, [...arguments]).then(() => ({ status: Res.OK }))
+    this._modelWithHooks
+      .findOneAndUpdate(req.getId(), req.getData(), req.getCompleteData(), meta, [...arguments])
+      .then(() => ({ status: Res.OK }))
   }
 
   _findOneAndDelete(req, res, meta) {

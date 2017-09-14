@@ -1,9 +1,10 @@
-import { cloneDeep, defaultsDeep, difference, forEach, isPlainObject, kebabCase, noop } from 'lodash'
+import { cloneDeep, defaultsDeep, forEach, isPlainObject, kebabCase, mapValues, noop } from 'lodash'
 import { pluralize } from 'inflection'
 import Ajv from 'ajv'
 import maybePromiseFactory from 'maybe-promise-factory'
+import { checkForUnrecognizedProperties } from './utils/helpers'
 import { POST_SCHEMA, POST_STORE, PRE_SCHEMA } from './utils/policyHookConstants'
-import AutonymError from './utils/AutonymError'
+import AutonymError from './AutonymError'
 
 const STORE_METHODS = ['create', 'find', 'findOne', 'findOneAndUpdate', 'findOneAndDelete']
 const POLICY_LIFECYCLE_HOOKS = [PRE_SCHEMA, POST_SCHEMA, POST_STORE]
@@ -12,48 +13,59 @@ const maybePromise = maybePromiseFactory()
 export class Model {
   static _normalizeConfig(_config) {
     if (!isPlainObject(_config)) {
-      throw new TypeError('config parameter passed to autonym.model decorator must be a plain object.')
+      throw new TypeError('config parameter must be a plain object.')
     }
 
     const { name } = _config
 
     if (typeof name !== 'string' || name.length === 0) {
-      throw new TypeError('config.name parameter passed to autonym.model decorator must be a non-empty string.')
+      throw new TypeError('config.name parameter must be a non-empty string.')
     }
     if (_config.init !== undefined && typeof _config.init !== 'function') {
-      throw new TypeError('config.init parameter passed to autonym.model decorator must be a function or undefined.')
+      throw new TypeError('config.init parameter must be a function or undefined.')
     }
     if (_config.schema !== null && !isPlainObject(_config.schema)) {
-      throw new TypeError('config.schema parameter passed to autonym.model decorator must be a JSON schema or explicitly null.')
+      throw new TypeError('config.schema parameter must be a JSON schema or explicitly null.')
     }
     if (_config.schema && _config.schema.type !== 'object') {
-      throw new TypeError('config.schema.type parameter passed to autonym.model decorator must be object.')
+      throw new TypeError('config.schema.type parameter must be object.')
     }
     if (_config.ajvOptions !== undefined && !isPlainObject(_config.ajvOptions)) {
-      throw new TypeError('config.ajvOptions parameter passed to autonym.model decorator must be a plain object or undefined.')
+      throw new TypeError('config.ajvOptions parameter must be a plain object or undefined.')
     }
     if (_config.policies !== undefined && !isPlainObject(_config.policies)) {
-      throw new TypeError('config.policies parameter passed to autonym.model decorator must be a plain object or undefined.')
+      throw new TypeError('config.policies parameter must be a plain object or undefined.')
     }
     if (!isPlainObject(_config.store)) {
-      throw new TypeError('config.store parameter passed to autonym.model decorator must be a plain object.')
+      throw new TypeError('config.store parameter must be a plain object.')
     }
     if (_config.route !== undefined && (typeof _config.route !== 'string' || _config.route === 0)) {
-      throw new TypeError('config.route parameter passed to autonym.model decorator must be a non-empty string or undefined.')
+      throw new TypeError('config.route parameter must be a non-empty string or undefined.')
     }
     if (_config.serialize !== undefined && typeof _config.serialize !== 'function') {
-      throw new TypeError('config.serialize parameter passed to autonym.model decorator must be a function or undefined.')
+      throw new TypeError('config.serialize parameter must be a function or undefined.')
     }
     if (_config.unserialize !== undefined && typeof _config.unserialize !== 'function') {
-      throw new TypeError('config.unserialize parameter passed to autonym.model decorator must be a function or undefined.')
+      throw new TypeError('config.unserialize parameter must be a function or undefined.')
     }
     if (_config.initialMeta !== undefined && !isPlainObject(_config.initialMeta)) {
-      throw new TypeError('config.initialMeta parameter passed to autonym.model decorator must be a plain object or undefined.')
+      throw new TypeError('config.initialMeta parameter must be a plain object or undefined.')
     }
 
-    this._checkForUnrecognizedProperties('config', _config, ['name', 'schema', 'ajvOptions', 'policies', 'store', 'route', 'serialize', 'unserialize'])
-    this._checkForUnrecognizedProperties('config.policies', _config.policies, POLICY_LIFECYCLE_HOOKS)
-    forEach(_config.policies, (hooks, hook) => this._checkForUnrecognizedProperties(`config.policies.${hook}`, hooks, STORE_METHODS))
+    checkForUnrecognizedProperties('config', _config, [
+      'name',
+      'schema',
+      'ajvOptions',
+      'policies',
+      'store',
+      'route',
+      'serialize',
+      'unserialize',
+    ])
+    checkForUnrecognizedProperties('config.policies', _config.policies, POLICY_LIFECYCLE_HOOKS)
+    forEach(_config.policies, (hooks, hook) =>
+      checkForUnrecognizedProperties(`config.policies.${hook}`, hooks, STORE_METHODS)
+    )
 
     const config = defaultsDeep({}, _config, {
       init: noop,
@@ -73,7 +85,9 @@ export class Model {
         return hooks
       }, {}),
       store: STORE_METHODS.reduce((methods, method) => {
-        methods[method] = () => Promise.reject(new AutonymError(AutonymError.METHOD_NOT_ALLOWED, `${method} is not implemented for model "${name}".`))
+        methods[method] = () => {
+          throw new AutonymError(AutonymError.METHOD_NOT_ALLOWED, `${method} is not implemented for model "${name}".`)
+        }
         return methods
       }, {}),
       route: pluralize(kebabCase(name)),
@@ -92,7 +106,9 @@ export class Model {
           return Promise.resolve()
         } else {
           return Promise.reject(
-            new AutonymError(AutonymError.NOT_ACCEPTABLE, `Schema validation for model "${name}" failed.`, { errors: validateAgainstSchema.ajvErrors })
+            new AutonymError(AutonymError.NOT_ACCEPTABLE, `Schema validation for model "${name}" failed.`, {
+              errors: validateAgainstSchema.ajvErrors,
+            })
           )
         }
       }
@@ -100,18 +116,13 @@ export class Model {
       config.validateAgainstSchema = () => Promise.resolve()
     }
 
+    config.store = mapValues(config.store, method => (...args) => maybePromise(() => method.apply(config.store, args)))
+
     const { serialize, unserialize } = config
     config.serialize = data => maybePromise(() => serialize(data))
     config.unserialize = data => maybePromise(() => unserialize(data))
 
     return config
-  }
-
-  static _checkForUnrecognizedProperties(parameterName, object, expectedProperties) {
-    const invalidKeys = difference(Object.keys(object), expectedProperties)
-    if (invalidKeys.length !== 0) {
-      throw new TypeError(`Unexpected properties on ${parameterName} parameter passed to autonym.model decorator: "${invalidKeys.join('", "')}".`)
-    }
   }
 
   constructor(config) {
@@ -139,6 +150,10 @@ export class Model {
     return this.getConfig().initialMeta
   }
 
+  getPolicies() {
+    return this.getConfig().policies
+  }
+
   init() {
     if (!this._initialization) {
       this._initialization = this.getConfig().init()
@@ -147,31 +162,37 @@ export class Model {
   }
 
   create(data, meta, hookArgs) {
-    return this._callWithHooks(data, hookArgs, () => maybePromise(() => this.getConfig().store.create(this.serialize(data), meta))).then(_data =>
-      this.unserialize(_data)
-    )
+    return this._callWithHooks(data, hookArgs, () =>
+      this.getConfig().store.create(this.serialize(data), meta)
+    ).then(_data => this.unserialize(_data))
   }
 
   find(query, meta, hookArgs) {
     return this._callWithHooks(null, hookArgs, () =>
-      maybePromise(() => this.getConfig().store.find(query, meta)).then(dataSet => dataSet.map(data => this.unserialize(data)))
+      this.getConfig()
+        .store.find(query, meta)
+        .then(dataSet => dataSet.map(data => this.unserialize(data)))
     )
   }
 
   findOne(id, meta, hookArgs) {
-    return this._callWithHooks(null, hookArgs, () => maybePromise(() => this.getConfig().store.findOne(id, meta)).then(data => this.unserialize(data)))
+    return this._callWithHooks(null, hookArgs, () =>
+      this.getConfig()
+        .store.findOne(id, meta)
+        .then(data => this.unserialize(data))
+    )
   }
 
   findOneAndUpdate(id, data, completeData, meta, hookArgs) {
     return this._callWithHooks(completeData, hookArgs, () =>
-      maybePromise(() => this.getConfig().store.findOneAndUpdate(id, this.serialize(data), this.serialize(completeData), meta)).then(_data =>
-        this.unserialize(_data)
-      )
+      this.getConfig()
+        .store.findOneAndUpdate(id, this.serialize(data), this.serialize(completeData), meta)
+        .then(_data => this.unserialize(_data))
     )
   }
 
   findOneAndDelete(id, meta, hookArgs) {
-    return this._callWithHooks(null, hookArgs, () => maybePromise(() => this.getConfig().store.findOneAndDelete(id, meta)))
+    return this._callWithHooks(null, hookArgs, () => this.getConfig().store.findOneAndDelete(id, meta))
   }
 
   serialize(data) {
@@ -202,7 +223,8 @@ export class Model {
   }
 
   _callWithHooks(data, hookArgs, fn) {
-    return this.runHook(PRE_SCHEMA, hookArgs)
+    return this.init()
+      .runHook(PRE_SCHEMA, hookArgs)
       .then(() => (data ? this.validateAgainstSchema(data) : Promise.resolve()))
       .then(() => this.runHook(POST_SCHEMA, hookArgs))
       .then(fn)

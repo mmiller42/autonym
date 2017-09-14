@@ -1,4 +1,4 @@
-import AutonymError from '../utils/AutonymError'
+import AutonymError from '../AutonymError'
 
 export class ErrorMiddleware {
   constructor() {
