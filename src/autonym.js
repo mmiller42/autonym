@@ -2,7 +2,7 @@ import { Router as createRouter } from 'express'
 import { isPlainObject } from 'lodash'
 import { Model } from './model'
 import errorMiddleware from './middleware/errorMiddleware'
-import storeMiddleware from './middleware/storeMiddleware'
+import modelMiddleware from './middleware/modelMiddleware'
 
 export class Autonym {
   static _normalizeConfig(config) {
@@ -41,7 +41,7 @@ export class Autonym {
 
     this._initializeModels().then(() => {
       this.getConfig().models.forEach(model => {
-        router.use(`/${model.getRoute()}`, storeMiddleware(model))
+        router.use(`/${model.getRoute()}`, modelMiddleware(model))
       })
       router.use(errorMiddleware())
     })

@@ -91,7 +91,9 @@ export class Model {
         if (validateAgainstSchema(data)) {
           return Promise.resolve()
         } else {
-          return Promise.reject(new AutonymError(AutonymError.NOT_ACCEPTABLE, `Schema validation for model "${name}" failed.`, validateAgainstSchema.ajvErrors))
+          return Promise.reject(
+            new AutonymError(AutonymError.NOT_ACCEPTABLE, `Schema validation for model "${name}" failed.`, { errors: validateAgainstSchema.ajvErrors })
+          )
         }
       }
     } else {
@@ -145,35 +147,31 @@ export class Model {
   }
 
   create(data, meta, hookArgs) {
-    return this._callWithHooks(data, hookArgs, () => this.getConfig().store.create(this.serialize(data), meta)).then(_data => this.unserialize(_data))
+    return this._callWithHooks(data, hookArgs, () => maybePromise(() => this.getConfig().store.create(this.serialize(data), meta))).then(_data =>
+      this.unserialize(_data)
+    )
   }
 
   find(query, meta, hookArgs) {
     return this._callWithHooks(null, hookArgs, () =>
-      this.getConfig()
-        .store.find(query, meta)
-        .then(dataSet => dataSet.map(data => this.unserialize(data)))
+      maybePromise(() => this.getConfig().store.find(query, meta)).then(dataSet => dataSet.map(data => this.unserialize(data)))
     )
   }
 
   findOne(id, meta, hookArgs) {
-    return this._callWithHooks(null, hookArgs, () =>
-      this.getConfig()
-        .store.findOne(id, meta)
-        .then(data => this.unserialize(data))
-    )
+    return this._callWithHooks(null, hookArgs, () => maybePromise(() => this.getConfig().store.findOne(id, meta)).then(data => this.unserialize(data)))
   }
 
   findOneAndUpdate(id, data, completeData, meta, hookArgs) {
     return this._callWithHooks(completeData, hookArgs, () =>
-      this.getConfig()
-        .store.findOneAndUpdate(id, this.serialize(data), this.serialize(completeData), meta)
-        .then(_data => this.unserialize(_data))
+      maybePromise(() => this.getConfig().store.findOneAndUpdate(id, this.serialize(data), this.serialize(completeData), meta)).then(_data =>
+        this.unserialize(_data)
+      )
     )
   }
 
   findOneAndDelete(id, meta, hookArgs) {
-    return this._callWithHooks(null, hookArgs, () => this.getConfig().store.findOneAndDelete(id, meta))
+    return this._callWithHooks(null, hookArgs, () => maybePromise(() => this.getConfig().store.findOneAndDelete(id, meta)))
   }
 
   serialize(data) {
@@ -200,7 +198,7 @@ export class Model {
     if (!validate) {
       throw new TypeError(`Unknown policy hook "${hook}".`)
     }
-    return validate(...hookArgs).then(() => Promise.resolve())
+    return maybePromise(() => validate(...hookArgs)).then(() => Promise.resolve())
   }
 
   _callWithHooks(data, hookArgs, fn) {

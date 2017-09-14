@@ -9,7 +9,7 @@ import AutonymError from '../utils/AutonymError'
 
 const maybePromise = maybePromiseFactory()
 
-export class StoreMiddleware {
+export class ModelMiddleware {
   constructor(model) {
     this._model = model
     this._modelWithHooks = model.withHooks(this._createPolicyHooks())
@@ -113,6 +113,6 @@ export class StoreMiddleware {
   }
 }
 
-export default function storeMiddleware(model) {
-  return new StoreMiddleware(model).getRouter()
+export default function modelMiddleware(model) {
+  return new ModelMiddleware(model).getRouter()
 }
