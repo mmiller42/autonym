@@ -208,10 +208,7 @@ export class Model {
   }
 
   withHooks(hooks) {
-    return {
-      ...this,
-      _hooks: hooks,
-    }
+    return Object.assign(Object.create(Object.getPrototypeOf(this)), this, { _hooks: hooks })
   }
 
   runHook(hook, hookArgs = []) {
