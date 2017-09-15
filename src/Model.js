@@ -1,16 +1,13 @@
+import { checkForUnrecognizedProperties, maybePromise } from './utils/index'
 import { cloneDeep, defaultsDeep, forEach, isPlainObject, kebabCase, mapValues, noop } from 'lodash'
-import { pluralize } from 'inflection'
 import Ajv from 'ajv'
-import maybePromiseFactory from 'maybe-promise-factory'
-import { checkForUnrecognizedProperties } from './utils/helpers'
-import { POST_SCHEMA, POST_STORE, PRE_SCHEMA } from './utils/policyHookConstants'
 import AutonymError from './AutonymError'
+import { pluralize } from 'inflection'
 
 const STORE_METHODS = ['create', 'find', 'findOne', 'findOneAndUpdate', 'findOneAndDelete']
-const POLICY_LIFECYCLE_HOOKS = [PRE_SCHEMA, POST_SCHEMA, POST_STORE]
-const maybePromise = maybePromiseFactory()
+const POLICY_LIFECYCLE_HOOKS = ['preSchema', 'postSchema', 'postStore']
 
-export class Model {
+export default class Model {
   static _normalizeConfig(_config) {
     if (!isPlainObject(_config)) {
       throw new TypeError('config parameter must be a plain object.')
@@ -221,17 +218,13 @@ export class Model {
 
   _callWithHooks(data, hookArgs, fn) {
     return this.init()
-      .runHook(PRE_SCHEMA, hookArgs)
+      .runHook('preSchema', hookArgs)
       .then(() => (data ? this.validateAgainstSchema(data) : Promise.resolve()))
-      .then(() => this.runHook(POST_SCHEMA, hookArgs))
+      .then(() => this.runHook('postSchema', hookArgs))
       .then(fn)
-      .then(result => this.runHook(POST_STORE, [...hookArgs, result]))
+      .then(result => this.runHook('postStore', [...hookArgs, result]))
       .catch(err => {
         throw AutonymError.fromError(err)
       })
   }
-}
-
-export default function model(config) {
-  return new Model(config)
 }

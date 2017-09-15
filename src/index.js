@@ -1,9 +1,8 @@
-import autonym from './autonym'
-import model, { Model } from './model'
+import AutonymError from './AutonymError'
+import Model from './Model'
 import Req from './Req'
 import Res from './Res'
-import responder from './responder'
-import AutonymError from './AutonymError'
+import createModelMiddleware from './createModelMiddleware'
+import createResponderMiddleware from './createResponderMiddleware'
 
-export default autonym
-export { AutonymError, model, Model, Req, Res, responder }
+export { AutonymError, Model, Req, Res, createModelMiddleware, createResponderMiddleware }

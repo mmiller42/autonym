@@ -7,8 +7,9 @@ A KISS JSON REST API framework that can be mounted to your Express application.
 - [Philosophy](#philosophy)
   * [Limitations](#limitations)
 - [Guide](#guide)
-  * [Concepts](#concepts)
+  * [Glossary](#glossary)
   * [Hello World](#hello-world)
+- [API](#api)
 
 <!-- tocstop -->
 
@@ -46,7 +47,7 @@ It is extremely lightweight and written in ES6. By design, it eliminates the nee
 
 ## Guide
 
-### Concepts
+### Glossary
 
 These are high-level concepts and vocabulary for working with an Autonym application.
 
@@ -62,9 +63,9 @@ These are high-level concepts and vocabulary for working with an Autonym applica
 
 * **Meta**: Policies and store methods are also passed a `meta` object. This is a plain JavaScript object that is shared for the entire duration of the request, and is passed from policy to policy, in addition to being passed to each of the store methods. This object can be used to cache supplemental information about the request, e.g. the current user session or search keywords from the query string; information that might be useful in the store method, such as filters to apply to a SQL query; or any other metadata pertaining to the request. Unlike the request data, which must be serializable in order to pass schema validation, the meta object may contain class instances.
 
-* **`autonym` middleware**: A middleware that can be mounted on your Express app. Provided with your models, it will intercept requests to your model endpoints to perform the appropriate API actions.
+* **Model middleware**: A middleware that can be mounted on your Express app. Provided with your models, it will intercept requests to your model endpoints to perform the appropriate API actions.
 
-* **`responder` middleware**: A middleware that can be mounted on your Express app, after the `autonym` middleware. In between the two middleware, you may install your own middleware to quash errors, add response headers, manipulate the payload, and so on. This middleware sends the response to the client.
+* **Responder middleware**: A middleware that can be mounted on your Express app, after the `autonym` middleware. In between the two middleware, you may install your own middleware to quash errors, add response headers, manipulate the payload, and so on. This middleware sends the response to the client.
 
 * **`AutonymError`**: A subclass of `Error`. Instances of `AutonymError` should be thrown whenever possible from policies and store methods. These errors have preset types that will determine the status code if they are thrown during an HTTP request; if not provided a code, it will be assumed that the error message should not be enclosed in the response.
 
@@ -75,9 +76,9 @@ This is a barebones app using Autonym. Please see the [`autonym-demo`](https://g
 Here, we create a basic store that simply persists the records to memory, in an internal array, and using auto-incrementing ids. Then we build a Person model with two basic fields, that uses the in-memory store. Finally, we mount the appropriate middleware.
 
 ```js
-import express from 'express'
+import { AutonymError, Model, createModelMiddleware, createResponderMiddleware } from 'autonym'
 import bodyParser from 'body-parser'
-import autonym, { model, AutonymError, responder } from 'autonym'
+import express from 'express'
 
 // Example store implementation
 const inMemoryStore = () => {
@@ -101,7 +102,7 @@ const inMemoryStore = () => {
 }
 
 // Example model
-const Person = model({
+const Person = new Model({
   name: 'Person',
   schema: {
     type: 'object',
@@ -119,8 +120,8 @@ const app = express()
 app.use(bodyParser.json({}))
 
 // Mount Autonym middleware
-app.use(autonym([ Person ]))
-app.use(responder())
+app.use(createModelMiddleware([ Person ]))
+app.use(createResponderMiddleware())
 
 // Start HTTP server
 app.listen(3000, () => console.log('App is ready'))
@@ -157,3 +158,7 @@ curl -X DELETE http://localhost:3000/people/1
 curl http://localhost:3000/people/1
 # {"message":"Record not found"}
 ```
+
+## API
+
+###

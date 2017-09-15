@@ -1,5 +1,5 @@
-import HTTP from 'http-status-codes'
 import { defaultsDeep, get, set } from 'lodash'
+import HTTP from 'http-status-codes'
 
 export default class Res {
   static OK = HTTP.OK
