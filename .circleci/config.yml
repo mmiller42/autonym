@@ -4,7 +4,6 @@ jobs:
     docker:
       - image: circleci/node:latest
     working_directory: ~/autonym
-
     steps:
       - checkout
       - run:
@@ -24,9 +23,6 @@ jobs:
       - run:
           name: Install dependencies
           command: npm install
-      - run:
-          name: Update lockfile
-          command: greenkeeper-lockfile-update
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
@@ -38,12 +34,16 @@ jobs:
           name: Test
           command: npm test
       - run:
+          name: Update lockfile
+          command: greenkeeper-lockfile-update
+      - run:
           name: Upload lockfile
           command: greenkeeper-lockfile-upload
       - deploy:
           name: Publish
           command: |
-            if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$"; then
+            export TAG="v$(git log -1 --pretty=%B)"
+            if echo $TAG | grep "^v[0-9]\+\.[0-9]\+\.[0-9]\+$"; then
               npm publish
             else
               echo "No tag pushed, skipping deploy"

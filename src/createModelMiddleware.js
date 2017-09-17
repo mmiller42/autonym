@@ -4,17 +4,17 @@ import Model from './Model'
 import { checkForUnrecognizedProperties } from './utils/index'
 import { Router as createRouter } from 'express'
 
-export default function autonym(_config) {
+export default async function autonym(_config) {
   const config = normalizeConfig()
 
   const router = createRouter()
 
-  initializeModels().then(() => {
-    config.models.forEach(model => {
-      router.use(`/${model.getRoute()}`, createStoreMiddleware(model))
-    })
-    router.use(createErrorMiddleware())
+  await initializeModels()
+
+  config.models.forEach(model => {
+    router.use(`/${model.getRoute()}`, createStoreMiddleware(model))
   })
+  router.use(createErrorMiddleware())
 
   function normalizeConfig() {
     if (!isPlainObject(_config)) {
@@ -42,7 +42,7 @@ export default function autonym(_config) {
     return normalizedConfig
   }
 
-  function initializeModels() {
-    return Promise.all(config.models.map(model => model.init()))
+  async function initializeModels() {
+    await Promise.all(config.models.map(model => model.init()))
   }
 }

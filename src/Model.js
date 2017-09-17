@@ -1,7 +1,7 @@
-import { checkForUnrecognizedProperties, maybePromise } from './utils/index'
 import { cloneDeep, defaultsDeep, forEach, isPlainObject, kebabCase, mapValues, noop } from 'lodash'
 import Ajv from 'ajv'
 import AutonymError from './AutonymError'
+import { checkForUnrecognizedProperties } from './utils/index'
 import { pluralize } from 'inflection'
 
 const STORE_METHODS = ['create', 'find', 'findOne', 'findOneAndUpdate', 'findOneAndDelete']
@@ -94,30 +94,26 @@ export default class Model {
     })
 
     const { init } = config
-    config.init = () => maybePromise(init)
+    config.init = async () => init()
 
     if (config.schema) {
       const validateAgainstSchema = new Ajv(config.ajvOptions).compile(config.schema)
-      config.validateAgainstSchema = data => {
-        if (validateAgainstSchema(data)) {
-          return Promise.resolve()
-        } else {
-          return Promise.reject(
-            new AutonymError(AutonymError.NOT_ACCEPTABLE, `Schema validation for model "${name}" failed.`, {
-              errors: validateAgainstSchema.ajvErrors,
-            })
-          )
+      config.validateAgainstSchema = async data => {
+        if (!validateAgainstSchema(data)) {
+          throw new AutonymError(AutonymError.NOT_ACCEPTABLE, `Schema validation for model "${name}" failed.`, {
+            errors: validateAgainstSchema.ajvErrors,
+          })
         }
       }
     } else {
-      config.validateAgainstSchema = () => Promise.resolve()
+      config.validateAgainstSchema = async () => undefined
     }
 
-    config.store = mapValues(config.store, method => (...args) => maybePromise(() => method.apply(config.store, args)))
+    config.store = mapValues(config.store, method => async (...args) => method.apply(config.store, args))
 
     const { serialize, unserialize } = config
-    config.serialize = data => maybePromise(() => serialize(data))
-    config.unserialize = data => maybePromise(() => unserialize(data))
+    config.serialize = async data => serialize(data)
+    config.unserialize = async data => unserialize(data)
 
     return config
   }
@@ -125,7 +121,7 @@ export default class Model {
   constructor(config) {
     this._config = Model._normalizeConfig(config)
     this._hooks = POLICY_LIFECYCLE_HOOKS.reduce((hooks, hook) => {
-      hooks[hook] = () => Promise.resolve()
+      hooks[hook] = async () => undefined
       return hooks
     }, {})
     this._initialization = null
@@ -151,56 +147,80 @@ export default class Model {
     return this.getConfig().policies
   }
 
-  init() {
+  async init() {
     if (!this._initialization) {
       this._initialization = this.getConfig().init()
     }
     return this._initialization
   }
 
-  create(data, meta, hookArgs) {
-    return this._callWithHooks(data, hookArgs, () =>
-      this.getConfig().store.create(this.serialize(data), meta)
-    ).then(_data => this.unserialize(_data))
+  async create(data, meta, hookArgs) {
+    const serializedData = await this.serialize(data)
+
+    const runner = this._callWithHooks(data, hookArgs)
+    await runner.next()
+
+    const result = await this.getConfig().store.create(serializedData, meta)
+    await runner.next(result)
+
+    return this.unserialize(result)
   }
 
-  find(query, meta, hookArgs) {
-    return this._callWithHooks(null, hookArgs, () =>
-      this.getConfig()
-        .store.find(query, meta)
-        .then(dataSet => dataSet.map(data => this.unserialize(data)))
-    )
+  async find(query, meta, hookArgs) {
+    const runner = this._callWithHooks(null, hookArgs)
+    await runner.next()
+
+    const results = await this.getConfig().store.find(query, meta)
+    await runner.next(results)
+
+    return Promise.all(results.map(async result => this.unserialize(result)))
   }
 
-  findOne(id, meta, hookArgs) {
-    return this._callWithHooks(null, hookArgs, () =>
-      this.getConfig()
-        .store.findOne(id, meta)
-        .then(data => this.unserialize(data))
-    )
+  async findOne(id, meta, hookArgs) {
+    const runner = this._callWithHooks(null, hookArgs)
+    await runner.next()
+
+    const result = await this.getConfig().store.findOne(id, meta)
+    await runner.next(result)
+
+    return this.unserialize(result)
   }
 
-  findOneAndUpdate(id, data, completeData, meta, hookArgs) {
-    return this._callWithHooks(completeData, hookArgs, () =>
-      this.getConfig()
-        .store.findOneAndUpdate(id, this.serialize(data), this.serialize(completeData), meta)
-        .then(_data => this.unserialize(_data))
-    )
+  async findOneAndUpdate(id, data, completeData, meta, hookArgs) {
+    const [serializedData, serializedCompleteData] = await Promise.all([
+      this.serialize(data),
+      this.serialize(completeData),
+    ])
+
+    const runner = this._callWithHooks(completeData, hookArgs)
+    await runner.next()
+
+    const result = await this.getConfig().store.findOneAndUpdate(id, serializedData, serializedCompleteData, meta)
+    await runner.next(result)
+
+    return this.unserialize(result)
   }
 
-  findOneAndDelete(id, meta, hookArgs) {
-    return this._callWithHooks(null, hookArgs, () => this.getConfig().store.findOneAndDelete(id, meta))
+  async findOneAndDelete(id, meta, hookArgs) {
+    const runner = this._callWithHooks(null, hookArgs)
+    await runner.next()
+
+    await this.getConfig().store.findOneAndDelete(id, meta)
+    const result = { id }
+    await runner.next(result)
+
+    return this.unserialize(result)
   }
 
-  serialize(data) {
+  async serialize(data) {
     return this.getConfig().serialize(data)
   }
 
-  unserialize(data) {
+  async unserialize(data) {
     return this.getConfig().unserialize(data)
   }
 
-  validateAgainstSchema(data) {
+  async validateAgainstSchema(data) {
     return this.getConfig().validateAgainstSchema(data)
   }
 
@@ -208,23 +228,20 @@ export default class Model {
     return Object.assign(Object.create(Object.getPrototypeOf(this)), this, { _hooks: hooks })
   }
 
-  runHook(hook, hookArgs = []) {
-    const validate = this._hooks[hook]
-    if (!validate) {
-      throw new TypeError(`Unknown policy hook "${hook}".`)
-    }
-    return maybePromise(() => validate(...hookArgs)).then(() => Promise.resolve())
-  }
+  async *_callWithHooks(data, hookArgs) {
+    try {
+      await this.init()
+      await this._hooks.preSchema(...hookArgs)
+      if (data) {
+        await this.validateAgainstSchema(data)
+      }
+      await this._hooks.postSchema(...hookArgs)
 
-  _callWithHooks(data, hookArgs, fn) {
-    return this.init()
-      .runHook('preSchema', hookArgs)
-      .then(() => (data ? this.validateAgainstSchema(data) : Promise.resolve()))
-      .then(() => this.runHook('postSchema', hookArgs))
-      .then(fn)
-      .then(result => this.runHook('postStore', [...hookArgs, result]))
-      .catch(err => {
-        throw AutonymError.fromError(err)
-      })
+      const result = yield
+
+      await this._hooks.postStore(...hookArgs, result)
+    } catch (err) {
+      throw AutonymError.fromError(err)
+    }
   }
 }

@@ -1,5 +1,6 @@
+/* eslint-disable import/prefer-default-export */
+
 import { difference } from 'lodash'
-import maybePromiseFactory from 'maybe-promise-factory'
 
 export function checkForUnrecognizedProperties(parameterName, object, expectedProperties) {
   const invalidKeys = difference(Object.keys(object), expectedProperties)
@@ -7,5 +8,3 @@ export function checkForUnrecognizedProperties(parameterName, object, expectedPr
     throw new TypeError(`Unexpected properties on ${parameterName} parameter: "${invalidKeys.join('", "')}".`)
   }
 }
-
-export const maybePromise = maybePromiseFactory()

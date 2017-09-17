@@ -38,18 +38,19 @@ export default class Req {
     return this._data
   }
 
-  getOriginalData() {
+  async getOriginalData() {
     if (!this.isWriting()) {
       throw new ReferenceError('Cannot get original data on readonly request.')
     }
     if (!this._originalData) {
-      this._originalData = this.isCreating() ? Promise.resolve({}) : this.getModel().findOne(this.getId())
+      this._originalData = this.isCreating() ? {} : this.getModel().findOne(this.getId())
     }
     return this._originalData
   }
 
-  getCompleteData() {
-    return this.getOriginalData().then(data => defaultsDeep({}, this.getData(), data))
+  async getCompleteData() {
+    const originalData = await this.getOriginalData()
+    return defaultsDeep({}, this.getData(), originalData)
   }
 
   getModel() {

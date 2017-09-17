@@ -4,7 +4,6 @@ import Req from '../Req'
 import Res from '../Res'
 import { Router as createRouter } from 'express'
 import { mapValues } from 'lodash'
-import { maybePromise } from '../utils/index'
 
 export default function createStoreMiddleware(model) {
   const modelWithHooks = model.withHooks(createPolicyHooks())
@@ -22,80 +21,92 @@ export default function createStoreMiddleware(model) {
 
   function createPolicyHooks() {
     return mapValues(model.getPolicies(), (methods, hook) =>
-      mapValues(methods, expression => (req, res, meta, data) => {
+      mapValues(methods, expression => async (req, res, meta, data) => {
         if (hook === 'postStore') {
-          res.setData(req.isFindingOneAndDeleting() ? { id: req.getId() } : data)
+          res.setData(data)
           res._isPopulated = true
         }
 
-        let lastError = null
-        const evaluator = new AsyncBooleanExpressionEvaluator(operand => {
-          let policy = null
-          if (typeof operand === 'function') {
-            policy = maybePromise(() => operand(req, res, meta))
-              .then(() => Promise.resolve(true))
-              .catch(err => {
-                // `err` may be undefined if this is the result of a `not` expression
-                lastError = err
-                return Promise.resolve(false)
-              })
-          } else if (typeof operand === 'boolean') {
-            policy = Promise.resolve(operand).then(() => {
-              if (!operand) {
-                // If operand is just false, use generic error
-                lastError = new AutonymError(AutonymError.FORBIDDEN, 'This action may not be performed.')
-              }
-            })
-          } else {
-            throw new TypeError(
-              `Policy operands for model "${model.getName()}" are invalid. Operands may be functions or booleans, received ${typeof operand}.`
-            )
-          }
-
-          return policy
-        })
-        return evaluator.execute(expression).then(result => {
-          if (!result) {
-            throw lastError || new AutonymError(AutonymError.FORBIDDEN, 'This action may not be performed.')
-          }
-        })
+        return evaluatePolicies(expression, req, res, meta)
       })
     )
   }
 
-  function callStoreMethod(method, _req, _res, next) {
+  async function evaluatePolicies(expression, req, res, meta) {
+    let lastError = null
+    const evaluator = new AsyncBooleanExpressionEvaluator(async operand => {
+      if (typeof operand === 'function') {
+        try {
+          await operand(req, res, meta)
+          return true
+        } catch (err) {
+          // `err` may be undefined if this is the result of a `not` expression
+          lastError = err
+          return false
+        }
+      } else if (typeof operand === 'boolean') {
+        if (operand) {
+          return true
+        } else {
+          // If operand is just false, use generic error
+          lastError = new AutonymError(AutonymError.FORBIDDEN, 'This action may not be performed.')
+          return false
+        }
+      } else {
+        throw new TypeError(
+          `Policy operands for model "${model.getName()}" are invalid. Operands may be functions or booleans, received ${typeof operand}.`
+        )
+      }
+    })
+
+    const result = await evaluator.execute(expression)
+    if (!result) {
+      throw lastError || new AutonymError(AutonymError.FORBIDDEN, 'This action may not be performed.')
+    }
+    return true
+  }
+
+  async function callStoreMethod(method, _req, _res, next) {
     const meta = model.getInitialMeta()
     const req = new Req(_req, model, meta)
     const res = new Res(_res, model, meta)
-    method(req, res, meta)
-      .then(({ status }) => {
-        if (res.getStatus() === null) {
-          res.setStatus(status)
-        }
-        next()
-      })
-      .catch(err => AutonymError.fromError(err).toClientError())
+
+    let err = null
+    try {
+      const { status } = await method(req, res, meta)
+      if (res.getStatus() === null) {
+        res.setStatus(status)
+      }
+    } catch (_err) {
+      err = AutonymError.fromError(_err).toClientError()
+    }
+
+    next(err)
   }
 
-  function create(req, res, meta) {
-    return modelWithHooks.create(req.getData(), meta, [...arguments]).then(() => ({ status: Res.CREATED }))
+  async function create(req, res, meta) {
+    await modelWithHooks.create(req.getData(), meta, [req, res, meta])
+    return { status: Res.CREATED }
   }
 
-  function find(req, res, meta) {
-    modelWithHooks.find(req.getQuery(), meta, [...arguments]).then(() => ({ status: Res.OK }))
+  async function find(req, res, meta) {
+    await modelWithHooks.find(req.getQuery(), meta, [req, res, meta])
+    return { status: Res.OK }
   }
 
-  function findOne(req, res, meta) {
-    modelWithHooks.findOne(req.getId(), meta, [...arguments]).then(() => ({ status: Res.OK }))
+  async function findOne(req, res, meta) {
+    await modelWithHooks.findOne(req.getId(), meta, [req, res, meta])
+    return { status: Res.OK }
   }
 
-  function findOneAndUpdate(req, res, meta) {
-    modelWithHooks
-      .findOneAndUpdate(req.getId(), req.getData(), req.getCompleteData(), meta, [...arguments])
-      .then(() => ({ status: Res.OK }))
+  async function findOneAndUpdate(req, res, meta) {
+    const completeData = await req.getCompleteData()
+    await modelWithHooks.findOneAndUpdate(req.getId(), req.getData(), completeData, meta, [req, res, meta])
+    return { status: Res.OK }
   }
 
-  function findOneAndDelete(req, res, meta) {
-    modelWithHooks.findOneAndDelete(req.getId(), meta, [...arguments]).then(() => ({ status: Res.OK }))
+  async function findOneAndDelete(req, res, meta) {
+    await modelWithHooks.findOneAndDelete(req.getId(), meta, [req, res, meta])
+    return { status: Res.OK }
   }
 }
