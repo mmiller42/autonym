@@ -1,4 +1,6 @@
-# autonym [![CircleCI](https://circleci.com/gh/mmiller42/autonym.svg?style=svg)](https://circleci.com/gh/mmiller42/autonym) [![Greenkeeper badge](https://badges.greenkeeper.io/mmiller42/autonym.svg)](https://greenkeeper.io/)
+# autonym
+
+[![CircleCI](https://circleci.com/gh/mmiller42/autonym.svg?style=svg)](https://circleci.com/gh/mmiller42/autonym) [![Greenkeeper badge](https://badges.greenkeeper.io/mmiller42/autonym.svg)](https://greenkeeper.io/)
 
 A KISS JSON REST API framework that can be mounted to your Express application.
 
