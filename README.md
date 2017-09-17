@@ -53,7 +53,7 @@ It is extremely lightweight and written in ES6. By design, it eliminates the nee
   <summary>
     It's worth noting that the developers behind Autonym envisioned a simplistic data model, and as a result there are some definite drawbacks and limitations to the built-in behaviors of the framework.
   </summary>
-  <br>
+
 * Autonym has no intrinsic understanding of related resources. The API does not understand foreign references and will only return resource ids. This means that establishing relationships between models must be handled at the database layer or manually in the API layer. However, this eliminates some of the complexity with setting up and consuming an API with intricate routing, unintentionally costly joins, and recursive embedding.
 
 * Autonym requires all resources to have a primary key that is named id. Composite primary keys or primary keys named something different are not currently supported. This is to make REST calls trivial by using standard resource identifiers in the URL.
