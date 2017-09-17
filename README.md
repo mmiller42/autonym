@@ -46,8 +46,10 @@ It is extremely lightweight and written in ES6. By design, it eliminates the nee
 * **Error handling is a snap.** Autonym ships with its own error class that allows you to throw errors like you normally would, without being conscious of when they are runtime errors or simply bad requests. Errors thrown when using the programmatic API are passed on to error-handling middleware, while errors that occur during an HTTP request are intelligently (but still explicitly) handled and returned to the client.
 
 * **Embrace ES6.** Autonym app components are heavily class-based and Autonym and its sister projects are written with Babel. You can always write components with ES5, but Autonym is designed for modern apps.
+</details>
 
-**Limitations**
+<details>
+<summary><strong>Limitations</strong></summary>
 
 * Autonym has no intrinsic understanding of related resources. The API does not understand foreign references and will only return resource ids. This means that establishing relationships between models must be handled at the database layer or manually in the API layer. However, this eliminates some of the complexity with setting up and consuming an API with intricate routing, unintentionally costly joins, and recursive embedding.
 
@@ -59,6 +61,9 @@ It is extremely lightweight and written in ES6. By design, it eliminates the nee
 ### Glossary
 
 These are high-level concepts and vocabulary for working with an Autonym application.
+
+<details>
+<summary><strong>Glossary</strong></summary>
 
 * **Model**: A model is an instance of the `Model` class provided by Autonym. Constructed with a configuration object, a model defines its schema, policies, store methods, and so on. A model instance has static methods on it that make it trivial to import elsewhere in the application to create, read, update, and delete resources programmatically. It's also designed to plug into the Autonym middleware to be evaluated in a HTTP request.
 
@@ -77,6 +82,7 @@ These are high-level concepts and vocabulary for working with an Autonym applica
 * **Responder middleware**: A middleware that can be mounted on your Express app, after the `autonym` middleware. In between the two middleware, you may install your own middleware to quash errors, add response headers, manipulate the payload, and so on. This middleware sends the response to the client.
 
 * **`AutonymError`**: A subclass of `Error`. Instances of `AutonymError` should be thrown whenever possible from policies and store methods. These errors have preset types that will determine the status code if they are thrown during an HTTP request; if not provided a code, it will be assumed that the error message should not be enclosed in the response.
+</details>
 
 ### Hello World
 
