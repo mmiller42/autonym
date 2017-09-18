@@ -3,6 +3,40 @@ import AutonymError from './AutonymError'
 /**
  * Creates a store that reads and writes data in memory.
  * @returns {Store} A complete set of store methods.
+ * @example
+ * const Person = new Model({
+ *   name: 'person',
+ *   schema: {
+ *     type: 'object',
+ *     properties: {
+ *       firstName: { type: 'string' },
+ *       lastName: { type: 'string' },
+ *     },
+ *     required: ['firstName', 'lastName'],
+ *   },
+ *   store: createInMemoryStore(),
+ * })
+ *
+ * const data = await Person.create({ firstName: 'Matt', lastName: 'Miller' })
+ * console.log(data) // { id: '1', firstName: 'Matt', lastName: 'Miller' }
+ *
+ * const data = await Person.find()
+ * console.log(data) // [{ id: '1', firstName: 'Matt', lastName: 'Miller' }]
+ *
+ * const data = await Person.findOne('1')
+ * console.log(data) // { id: '1', firstName: 'Matt', lastName: 'Miller' }
+ *
+ * const data = await Person.findOneAndUpdate('1', { firstName: 'Matthew' })
+ * console.log(data) // { id: '1', firstName: 'Matthew', lastName: 'Miller' }
+ *
+ * const data = await Person.findOneAndDelete('1')
+ * console.log(data) // { id: '1' }
+ *
+ * try {
+ *   await Person.findOne('1')
+ * } catch (err) {
+ *   console.log(err) // 'NOT_FOUND - Record not found.'
+ * }
  */
 const createInMemoryStore = () => {
   const records = []
