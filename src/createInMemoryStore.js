@@ -4,7 +4,7 @@ import AutonymError from './AutonymError'
  * Creates a store that reads and writes data in memory.
  * @returns {Store} A complete set of store methods.
  */
-const inMemoryStore = () => {
+const createInMemoryStore = () => {
   const records = []
   let counter = 0
   const findRecordIndex = id => {
@@ -24,4 +24,4 @@ const inMemoryStore = () => {
   }
 }
 
-export default inMemoryStore
+export default createInMemoryStore

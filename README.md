@@ -15,8 +15,7 @@ npm install autonym
 ## Quick Start
 
 ```js
-import { AutonymError, Model, createModelMiddleware, createResponderMiddleware } from 'autonym'
-import inMemoryStore from 'autonym/inMemoryStore' // Simple store creator that persists resources to memory
+import { AutonymError, Model, createInMemoryStore, createModelMiddleware, createResponderMiddleware } from 'autonym'
 import bodyParser from 'body-parser'
 import express from 'express'
 
@@ -41,7 +40,7 @@ const Person = new Model({
     },
     required: ['firstName', 'lastName'],
   },
-  store: inMemoryStore(),
+  store: createInMemoryStore(),
 })
 
 const mountAutonym = async () => {

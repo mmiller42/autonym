@@ -16,7 +16,7 @@
   "main": "lib/index.js",
   "scripts": {
     "build": "rm -rf lib && babel src --out-dir lib --source-maps --copy-files",
-    "generate-docs": "esdoc",
+    "generate-docs": "rm -rf docs && esdoc",
     "lint": "eslint src test",
     "precommit": "lint-staged && npm run generate-docs",
     "prettier": "prettier --write '{{src,jsdoc}/**/*.{js,json},*.js,.*rc,.*.json}'",
