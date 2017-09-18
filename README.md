@@ -4,6 +4,160 @@
 
 A KISS JSON REST API framework that can be mounted to your Express application.
 
+The API, guides, and examples are available on [our website](https://autonym.io/), which is generated using [ESDoc](https://esdoc.org/).
+
+## Installation
+
+```bash
+npm install autonym
+```
+
+## Quick Start
+
+```js
+import { AutonymError, Model, createModelMiddleware, createResponderMiddleware } from 'autonym'
+import inMemoryStore from 'autonym/inMemoryStore' // Simple store creator that persists resources to memory
+import bodyParser from 'body-parser'
+import express from 'express'
+
+// Make sure we crash on uncaught rejections (default Node behavior is inconsistent with synchronous exceptions)
+// See http://2ality.com/2016/04/unhandled-rejections.html#unhandled-rejections-in-nodejs
+process.on('unhandledRejection', err => {
+  console.error(err)
+  process.exit(1)
+})
+
+const app = express()
+app.use(bodyParser.json({}))
+
+// Example model
+const Person = new Model({
+  name: 'person',
+  schema: {
+    type: 'object',
+    properties: {
+      firstName: { type: 'string' },
+      lastName: { type: 'string' },
+    },
+    required: ['firstName', 'lastName'],
+  },
+  store: inMemoryStore(),
+})
+
+const mountAutonym = async () => {
+  // Mount Autonym middleware
+  const modelMiddleware = await createModelMiddleware({ models: [Person] })
+  app.use(modelMiddleware)
+  app.use(createResponderMiddleware())
+  console.log('Autonym is ready')
+}
+
+mountAutonym()
+
+// Start HTTP server
+app.listen(3000, () => console.log('API is ready'))
+```
+
+### Example REST API requests
+
+#### Create a new person
+
+```bash
+curl -H 'Content-Type: application/json' -X POST -d '{"firstName":"Matt","lastName":"Miller"}' http://localhost:3000/people
+```
+
+```json
+{
+  "id": "1",
+  "firstName": "Matt",
+  "lastName": "Miller"
+}
+```
+
+#### Schema validation error
+
+```bash
+curl -H 'Content-Type: application/json' -X POST -d '{"firstName":"Matt"}' http://localhost:3000/people
+```
+
+```json
+{
+  "message": "Schema validation for model \"person\" failed."
+  "errors": [
+    {
+      "keyword": "required",
+      "dataPath": "",
+      "schemaPath": "#/required",
+      "params": { "missingProperty": "lastName" },
+      "message": "should have required property 'lastName'"
+    }
+  ]
+}
+```
+
+#### Find people
+
+```bash
+curl http://localhost:3000/people
+```
+
+```json
+[
+  {
+    "id": "1",
+    "firstName": "Matt",
+    "lastName": "Miller"
+  }
+]
+```
+
+#### Find one person
+
+```bash
+curl http://localhost:3000/people/1
+```
+```json
+{
+  "id": "1",
+  "firstName": "Matt",
+  "lastName": "Miller"
+}
+```
+
+#### Update a property on a person
+
+```bash
+curl -H 'Content-Type: application/json' -X PATCH -d '{"firstName":"Matthew"}' http://localhost:3000/people/1
+```
+
+```json
+{
+  "id": "1",
+  "firstName": "Matthew",
+  "lastName": "Miller"
+}
+```
+
+#### Delete a person
+
+```bash
+curl -X DELETE http://localhost:3000/people/1
+```
+
+```json
+{ "id": "1" }
+```
+
+#### Not found error
+
+```bash
+curl http://localhost:3000/people/1
+```
+
+```json
+{ "message": "Record not found" }
+```
+
 ## Philosophy
 
 Autonym is another framework built on top of <a href="https://expressjs.com/">Express</a> to simplify building REST APIs for your resources. However, its philosophy sets it apart from most other Node.js API frameworks.
@@ -24,11 +178,13 @@ It is extremely lightweight and written in ES6. By design, it eliminates the nee
 
 * **A clear distinction between a programmatic API and REST API, but without controllers.** Autonym splits the work of validating into two distinct phases: schemas and policies. You define them together, but policies, which only are applicable to your REST API, are not run when you just want to import your model and insert a record. This means you don't have to split up your resource definition into a separate model and controller, but you can still access your model directly without mocking a request.
 
+* **Configuration is driven by plain objects.** This means that every piece that makes up a model -- the methods for persisting data to your database, the combinations of policies used to transform and validate requests, and the schemas that define your resource properties -- are all trivial to define, reuse, abstract, and assemble.
+
 * **Isolation for testability.** Each component of an Autonym app is designed to be unit testable: JSON schemas can be tested independently, policies are just simple JavaScript functions that can be imported directly, and models are simple, isolated objects that never deal with request or response objects.
 
 * **Error handling is a snap.** Autonym ships with its own error class that allows you to throw errors like you normally would, without being conscious of when they are runtime errors or simply bad requests. Errors thrown when using the programmatic API are passed on to error-handling middleware, while errors that occur during an HTTP request are intelligently (but still explicitly) handled and returned to the client.
 
-* **Embrace ES6.** Autonym app components are heavily class-based and Autonym and its sister projects are written with Babel. You can always write components with ES5, but Autonym is designed for modern apps.
+* **Embrace ES6+.** Autonym app components are heavily class-based and Autonym and its sister projects are written with Babel. No more callback hell!
 
 It's worth noting that the developers behind Autonym envisioned a simplistic data model, and as a result there are some definite drawbacks and limitations to the built-in behaviors of the framework.
 
@@ -59,108 +215,3 @@ These are high-level concepts and vocabulary for working with an Autonym applica
 * **Responder middleware**: A middleware that can be mounted on your Express app, after the `autonym` middleware. In between the two middleware, you may install your own middleware to quash errors, add response headers, manipulate the payload, and so on. This middleware sends the response to the client.
 
 * **`AutonymError`**: A subclass of `Error`. Instances of `AutonymError` should be thrown whenever possible from policies and store methods. These errors have preset types that will determine the status code if they are thrown during an HTTP request; if not provided a code, it will be assumed that the error message should not be enclosed in the response.
-
-### Hello World
-
-This is a barebones app using Autonym. Please see the [`autonym-demo`](https://github.com/mmiller42/autonym-demo) repository for a better example using best practices.
-
-Here, we create a basic store that simply persists the records to memory, in an internal array, and using auto-incrementing ids. Then we build a Person model with two basic fields, that uses the in-memory store. Finally, we mount the appropriate middleware.
-
-```js
-import { AutonymError, Model, createModelMiddleware, createResponderMiddleware } from 'autonym'
-import bodyParser from 'body-parser'
-import express from 'express'
-
-// Make sure we crash on uncaught rejections (default Node behavior is inconsistent with synchronous exceptions)
-process.on('unhandledRejection', err => {
-  console.error(err)
-  process.exit(1)
-})
-
-// Example store implementation
-const inMemoryStore = () => {
-  const records = []
-  let counter = 0
-  const findRecordIndex = id => {
-    const index = records.findIndex(record => record.id === id)
-    if (index < 0) {
-      throw new AutonymError(AutonymError.NOT_FOUND, 'Record not found')
-    }
-    return index
-  }
-  
-  return {
-    create: data => records[records.push({ ...data, id: ++counter }) - 1],
-    find: () => records,
-    findOne: id => records[findRecordIndex(id)],
-    findOneAndUpdate: (id, data) => Object.assign(records[findRecordIndex(id)], data),
-    findOneAndDelete: id => records.splice(findRecordIndex(id), 1)[0],
-  }
-}
-
-// Example model
-const Person = new Model({
-  name: 'Person',
-  schema: {
-    type: 'object',
-    properties: {
-      firstName: { type: 'string' },
-      lastName: { type: 'string' },
-    },
-    required: ['firstName', 'lastName'],
-  },
-  store: inMemoryStore(),
-})
-
-// Initialize express app
-const app = express()
-app.use(bodyParser.json({}))
-
-const mountAutonym = async () => {
-  // Mount Autonym middleware
-  const modelMiddleware = await createModelMiddleware({ models: [Person] })
-  app.use(modelMiddleware)
-  app.use(createResponderMiddleware())
-}
-
-mountAutonym()
-
-// Start HTTP server
-app.listen(3000, () => console.log('App is ready'))
-```
-
-At this point, we should be able to run the app and make some requests:
-
-```bash
-# create
-curl -H 'Content-Type: application/json' -X POST -d '{"firstName":"Matt","lastName":"Miller"}' http://localhost:3000/people
-# {"firstName":"Matt","lastName":"Miller","id":1}
-
-# create schema error
-curl -H 'Content-Type: application/json' -X POST -d '{"firstName":"Matt"}' http://localhost:3000/people
-# {"errors":[{"keyword":"required","dataPath":"","schemaPath":"#/required","params":{"missingProperty":"lastName"},"message":"should have required property 'lastName'"}],"message":"Schema validation for model \"Person\" failed."}
-
-# find
-curl http://localhost:3000/people
-# [{"firstName":"Matt","lastName":"Miller","id":1}]
-
-# findOne
-curl http://localhost:3000/people/1
-# {"firstName":"Matt","lastName":"Miller","id":1}
-
-# findOneAndUpdate
-curl -H 'Content-Type: application/json' -X PATCH -d '{"firstName":"Matthew"}' http://localhost:3000/people/1
-# {"firstName":"Matthew","lastName":"Miller","id":1}
-
-# findOneAndDelete
-curl -X DELETE http://localhost:3000/people/1
-# {"firstName":"Matthew","lastName":"Miller","id":1}
-
-# findOne thrown error
-curl http://localhost:3000/people/1
-# {"message":"Record not found"}
-```
-
-## API
-
-###
