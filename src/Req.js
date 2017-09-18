@@ -1,5 +1,3 @@
-/** @module */
-
 import { cloneDeep, defaultsDeep } from 'lodash'
 
 /**
@@ -9,7 +7,9 @@ export default class Req {
   /**
    * @param {http.IncomingMessage} raw The raw IncomingMessage object.
    * @param {Model} model The Autonym model instance.
-   * @param {object} meta The meta object aggregated by policies during the request.
+   * @param {Meta} meta The meta object aggregated by policies during the request.
+   * @example
+   * const req = new AutonymReq(request, Post, meta)
    */
   constructor(raw, model, meta) {
     raw.autonym = this
@@ -19,6 +19,7 @@ export default class Req {
     this._model = model
     this._data = this.hasBody() ? cloneDeep(raw.body) : null
     this._originalData = null
+    this._isValidated = false
   }
 
   /**
@@ -31,7 +32,7 @@ export default class Req {
 
   /**
    * Gets the data from the request body.
-   * @returns {object} The data.
+   * @returns {Resource} The data.
    * @throws {ReferenceError} If the request does not have a body.
    */
   getData() {
@@ -43,22 +44,41 @@ export default class Req {
 
   /**
    * Merges the request data with the given data, without modifying the original request.
-   * @param {object} data The new properties to set.
+   * @param {Resource} data The new properties to set.
+   * @param {boolean} [replace] If true, replaces the data on the response instead of merging it.
    * @returns {void}
    * @throws {ReferenceError} If the request does not have a body.
+   * @throws {ReferenceError} If the data is being modified before the schema validation step. It is okay to
+   * completely replace the data before validation though. This is to prevent the mistake of using `setData` to add
+   * the value of a newly computed property, only to have it be discarded at the validation step.
+   * @example
+   * console.log(req.getData()) // { title: 'Hello World' }
+   * req.setData({ name: 'Test' })
+   * console.log(req.getData()) // { name: 'Test', title: 'Hello World' }
+   * @example
+   * console.log(req.getData()) // { title: 'Hello World' }
+   * req.setData({ name: 'Test' }, true)
+   * console.log(req.getData()) // { name: 'Test' }
    */
-  setData(data) {
+  setData(data, replace = false) {
     if (!this.hasBody()) {
       throw new ReferenceError('Cannot set request data on a request without a body.')
     }
+    if (!this.isValidated() && !replace) {
+      throw new ReferenceError('Cannot set request data before schema validation, as the data would be overwritten.')
+    }
 
-    this._data = defaultsDeep(this._data, data)
+    this._data = replace ? data : defaultsDeep(this._data, data)
   }
 
   /**
    * For update queries, gets the data of the original resource to update. For create queries, gets an empty object.
-   * @returns {Promise.<object>} The original resource data.
+   * @returns {Promise.<Resource, AutonymError>} The original resource data.
    * @throws {ReferenceError} If the request is not a create or update request.
+   * @example
+   * console.log(req.getData()) // { title: 'Test' }
+   * const originalData = await req.getOriginalData()
+   * console.log(originalData) // { title: 'Hello World', body: 'This is my first post.' }
    */
   async getOriginalData() {
     if (!this.isWriting()) {
@@ -72,7 +92,11 @@ export default class Req {
 
   /**
    * Gets the result of merging the original data (see `#getOriginalData`) with the request data.
-   * @returns {Promise.<object>} The merged data.
+   * @returns {Promise.<Resource, AutonymError>} The merged data.
+   * @example
+   * console.log(req.getData()) // { title: 'Test' }
+   * const originalData = await req.getCompleteData()
+   * console.log(originalData) // { title: 'Test', body: 'This is my first post.' }
    */
   async getCompleteData() {
     const originalData = await this.getOriginalData()
@@ -114,6 +138,15 @@ export default class Req {
    */
   getHeader(header) {
     return this.getRaw().get(header)
+  }
+
+  /**
+   * Whether this step is occurring with safe data, i.e. the data has been validated, filtered, and populated with
+   * defaults.
+   * @returns {boolean} True if it has passed the preSchema and validateAgainstSchema steps.
+   */
+  isValidated() {
+    return this._isValidated
   }
 
   /**

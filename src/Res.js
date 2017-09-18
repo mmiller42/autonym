@@ -1,5 +1,3 @@
-/** @module */
-
 import HTTP from 'http-status-codes'
 import { defaultsDeep } from 'lodash'
 
@@ -24,7 +22,9 @@ export default class Res {
   /**
    * @param {http.ServerResponse} raw The raw ServerResponse object.
    * @param {Model} model The Autonym model instance.
-   * @param {object} meta The meta object aggregated by policies during the request.
+   * @param {Meta} meta The meta object aggregated by policies during the request.
+   * @example
+   * const res = new AutonymRes(response, Post, meta)
    */
   constructor(raw, model, meta) {
     raw.autonym = this
@@ -47,7 +47,7 @@ export default class Res {
 
   /**
    * Gets the data currently set for the response body.
-   * @returns {object} The data.
+   * @returns {Resource} The data.
    * @throws {ReferenceError} If the store method has not been called yet.
    */
   getData() {
@@ -59,16 +59,25 @@ export default class Res {
 
   /**
    * Merges the currently set response data with the given data.
-   * @param {object} data The new properties to set.
+   * @param {Resource} data The new properties to set.
+   * @param {boolean} [replace] If true, replaces the data on the response instead of merging it.
    * @returns {void}
    * @throws {ReferenceError} If the store method has not been called yet.
+   * @example
+   * console.log(res.getData()) // { title: 'Hello World' }
+   * res.setData({ name: 'Test' })
+   * console.log(res.getData()) // { name: 'Test', title: 'Hello World' }
+   * @example
+   * console.log(res.getData()) // { title: 'Hello World' }
+   * res.setData({ name: 'Test' }, true)
+   * console.log(res.getData()) // { name: 'Test' }
    */
-  setData(data) {
+  setData(data, replace = false) {
     if (!this.isPopulated()) {
       throw new ReferenceError('Cannot set response data before store method has been called.')
     }
 
-    this._data = defaultsDeep(this._data, data)
+    this._data = replace ? data : defaultsDeep(this._data, data)
   }
 
   /**

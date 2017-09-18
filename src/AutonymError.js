@@ -1,5 +1,3 @@
-/** @module */
-
 import HTTP from 'http-status-codes'
 
 /**
@@ -75,6 +73,16 @@ export default class AutonymError extends Error {
    * error object implements a `toJSON` method, its result will be stored as additional data.
    * @param {Error} error An error object.
    * @returns {AutonymError} The instance of AutonymError.
+   * @example
+   * const err = new Error('Something bad happened')
+   * const autonymError = AutonymError.fromError(err)
+   * console.log(autonymError.getPayload()) // { message: 'An internal server error occurred.' }
+   * @example
+   * const err = new Error('Something bad happened')
+   * err.code = AutonymError.BAD_REQUEST
+   * const autonymError = AutonymError.fromError(err)
+   * // Still internal server error until we call `#toClientError()`
+   * console.log(autonymError.getPayload()) // { message: 'An internal server error occurred.' }
    */
   static fromError(error) {
     if (error.isAutonymError) {
@@ -89,14 +97,19 @@ export default class AutonymError extends Error {
   }
 
   /**
-   * @param {string} code One of the error code static constants, or any other identifiable value for the error type.
+   * @param {string} [code] One of the error code static constants, or any other identifiable value for the error
+   * type. If falsy, will fall back to `AutonymError.INTERNAL_SERVER_ERROR`.
    * @param {string} message A human-readable description of the error. It will only be passed to the client in a
    * response if the code is one of `Autonym.CLIENT_ERRORS`.
    * @param {object} [data] Additional metadata to store on the error.
+   * @example
+   * const autonymError = new AutonymError(null, 'Something bad happened')
+   * @example
+   * const autonymError = new AutonymError(AutonymError.BAD_REQUEST, 'Something bad happened', { invalid: 'xyz' })
    */
   constructor(code, message, data = {}) {
     super(`${code}\n${message}\n${data}`)
-    this._code = code
+    this._code = code || AutonymError.INTERNAL_SERVER_ERROR
     this._message = message
     this._data = data
     this._isClientError = false
@@ -124,7 +137,7 @@ export default class AutonymError extends Error {
    * @returns {number} The HTTP status code.
    */
   getStatus() {
-    return HTTP[this.getCode()] || AutonymError.INTERNAL_SERVER_ERROR
+    return HTTP[this.getCode() || AutonymError.INTERNAL_SERVER_ERROR]
   }
 
   /**
@@ -137,8 +150,14 @@ export default class AutonymError extends Error {
 
   /**
    * Gets the data to send in the HTTP response. It will only return the error data and message if the error has
-   * been conerted to a client error and its code is one of `Autonym.CLIENT_ERRORS`.
-   * @returns {{object}} The error payload. At a minimum, this object will have a `message` property.
+   * been converted to a client error and its code is one of `Autonym.CLIENT_ERRORS`.
+   * @returns {object} The error payload. At a minimum, this object will have a `message` property.
+   * @example
+   * const err = new AutonymError(AutonymError.INTERNAL_SERVER_ERROR, 'Something bad happened.', { x: 2 })
+   * console.log(err.getPayload()) // { message: 'An internal server error occurred.' }
+   * @example
+   * const err = new AutonymError(AutonymError.BAD_REQUEST, 'Something bad happened.', { x: 2 })
+   * console.log(err.getPayload()) // { x: 2, message: 'Something bad happened.' }
    */
   getPayload() {
     if (this.isClientError()) {
@@ -152,6 +171,16 @@ export default class AutonymError extends Error {
    * Creates a copy of this error with a flag on it indicating it is a client error. Any error thrown will by
    * default be an internal server error, until it is converted to a client error and it has an applicable error code.
    * @returns {AutonymError} The client error.
+   * @example
+   * const clientError = new AutonymError(null, 'Something bad happened').toClientError()
+   * console.log(clientError.isClientError()) // false
+   * console.log(clientError.getPayload()) // { message: 'An internal server error occurred.' }
+   * console.log(clientError.getStatus()) // 500
+   * @example
+   * const clientError = new AutonymError(AutonymError.BAD_REQUEST, 'Something bad happened').toClientError()
+   * console.log(clientError.isClientError()) // true
+   * console.log(clientError.getPayload()) // { message: 'Something bad happened' }
+   * console.log(clientError.getStatus()) // 400
    */
   toClientError() {
     const clientError = new AutonymError(this.getCode(), this.getMessage(), this.getData())

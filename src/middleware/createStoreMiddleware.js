@@ -22,7 +22,12 @@ export default function createStoreMiddleware(model) {
   function createPolicyHooks() {
     return mapValues(model.getPolicies(), (methods, hook) =>
       mapValues(methods, expression => async (req, res, meta, data) => {
-        if (hook === 'postStore') {
+        if (hook === 'postSchema') {
+          if (data) {
+            req.setData(data, true)
+          }
+          req._isValidated = true
+        } else if (hook === 'postStore') {
           res.setData(data)
           res._isPopulated = true
         }

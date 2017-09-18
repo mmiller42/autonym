@@ -1,5 +1,3 @@
-/** @module */
-
 import { checkForUnrecognizedProperties, cloneInstance } from './utils/index'
 import { cloneDeep, defaultsDeep, forEach, isPlainObject, kebabCase, mapValues, noop } from 'lodash'
 import Ajv from 'ajv'
@@ -38,17 +36,24 @@ export default class Model {
     if (_config.policies !== undefined && !isPlainObject(_config.policies)) {
       throw new TypeError('config.policies parameter must be a plain object or undefined.')
     }
-    if (!isPlainObject(_config.store)) {
-      throw new TypeError('config.store parameter must be a plain object.')
+    if (_config.store === null || typeof _config.store !== 'object') {
+      throw new TypeError('config.store parameter must be an object.')
     }
+    ;[
+      'create',
+      'find',
+      'findOne',
+      'findOneAndUpdate',
+      'findOneAndDelete',
+      'serialize',
+      'unserialize',
+    ].forEach(method => {
+      if (_config.store[method] !== undefined && typeof _config.store[method] !== 'function') {
+        throw new TypeError(`config.store.${method} must be a function or undefined.`)
+      }
+    })
     if (_config.route !== undefined && (typeof _config.route !== 'string' || _config.route === 0)) {
       throw new TypeError('config.route parameter must be a non-empty string or undefined.')
-    }
-    if (_config.serialize !== undefined && typeof _config.serialize !== 'function') {
-      throw new TypeError('config.serialize parameter must be a function or undefined.')
-    }
-    if (_config.unserialize !== undefined && typeof _config.unserialize !== 'function') {
-      throw new TypeError('config.unserialize parameter must be a function or undefined.')
     }
     if (_config.initialMeta !== undefined && !isPlainObject(_config.initialMeta)) {
       throw new TypeError('config.initialMeta parameter must be a plain object or undefined.')
@@ -62,8 +67,6 @@ export default class Model {
       'policies',
       'store',
       'route',
-      'serialize',
-      'unserialize',
     ])
     checkForUnrecognizedProperties('config.policies', _config.policies, POLICY_LIFECYCLE_HOOKS)
     forEach(_config.policies, (hooks, hook) =>
@@ -87,15 +90,17 @@ export default class Model {
         }, {})
         return hooks
       }, {}),
-      store: STORE_METHODS.reduce((methods, method) => {
-        methods[method] = () => {
-          throw new AutonymError(AutonymError.METHOD_NOT_ALLOWED, `${method} is not implemented for model "${name}".`)
-        }
-        return methods
-      }, {}),
+      store: {
+        ...STORE_METHODS.reduce((methods, method) => {
+          methods[method] = () => {
+            throw new AutonymError(AutonymError.METHOD_NOT_ALLOWED, `${method} is not implemented for model "${name}".`)
+          }
+          return methods
+        }, {}),
+        serialize: cloneDeep,
+        unserialize: cloneDeep,
+      },
       route: pluralize(kebabCase(name)),
-      serialize: cloneDeep,
-      unserialize: cloneDeep,
       initialMeta: {},
     })
 
@@ -105,21 +110,23 @@ export default class Model {
     if (config.schema) {
       const validateAgainstSchema = new Ajv(config.ajvOptions).compile(config.schema)
       config.validateAgainstSchema = async data => {
-        if (!validateAgainstSchema(data)) {
+        const validatedData = cloneDeep(data)
+        if (!validateAgainstSchema(validatedData)) {
           throw new AutonymError(AutonymError.NOT_ACCEPTABLE, `Schema validation for model "${name}" failed.`, {
             errors: validateAgainstSchema.ajvErrors,
           })
         }
+        return validatedData
       }
     } else {
-      config.validateAgainstSchema = async () => undefined
+      config.validateAgainstSchema = async data => data
     }
 
     config.store = mapValues(config.store, method => async (...args) => method.apply(config.store, args))
 
-    const { serialize, unserialize } = config
-    config.serialize = async data => serialize(data)
-    config.unserialize = async data => unserialize(data)
+    const { serialize, unserialize } = config.store
+    config.store.serialize = async data => serialize(data)
+    config.store.unserialize = async data => unserialize(data)
 
     return config
   }
@@ -127,32 +134,55 @@ export default class Model {
   /**
    * @param {object} config Configuration.
    * @param {string} config.name A unique name for the model, like `'user'`.
-   * @param {Model~init} [config.init] A function to call when the model is first used.
-   * @param {object|null} config.schema A JSON schema to validate data against before passing it to the store
+   * @param {function(): *|Promise.<*, Error>} [config.init] A function to call when the model is first used.
+   * @param {Schema|null} config.schema A JSON schema to validate data against before passing it to the store
    * methods, or explicitly `null` to disable schema validation.
-   * @param {object} [config.ajvOptions] Additional options to pass to the
-   * [https://github.com/epoberezkin/ajv](Ajv) instance.
-   * @param {object} [config.policies] Configuration policies.
-   * @param {PolicyLifecycleHook} [config.policies.preSchema] A map of store method to policy expression of
-   * the policies to run before schema validation. These policies are run whether the model has a defined schema or not.
-   * @param {PolicyLifecycleHook} [config.policies.postSchema] A map of store method to policy expression of
-   * the policies to run after schema validation. These policies are run whether the model has a defined schema or not.
-   * @param {PolicyLifecycleHook} [config.policies.postStore] A map of store method to policy expression of
-   * the policies to run after the store method is called.
-   * @param {object} config.store Configuration store.
-   * @param {Model~create} [config.store.create] A function called to create a new resource.
-   * @param {Model~find} [config.store.find] A function called to find resources.
-   * @param {Model~findOne} [config.store.findOne] A function called to find a single resource.
-   * @param {Model~findOneAndUpdate} [config.store.findOneAndUpdate] A function called to update a single resource.
-   * @param {Model~findOneAndDelete} [config.store.findOneAndDelete] A function called to delete a single resource.
+   * @param {AjvOptions} [config.ajvOptions] Additional options to pass to the Ajv instance.
+   * @param {ModelPolicies} [config.policies] Configuration policies.
+   * @param {Store} config.store Configuration store.
    * @param {string} [config.route] The route to use for requests of this type of resource. Defaults to pluralizing
    * the `name` property and then converting it to kebab-case.
-   * @param {Model~serialize} [config.serialize] A function called to reformat the request body automatically before
-   * passing it into the `create` and `findOneAndUpdate` store methods. It must be able to handle partial data objects.
-   * @param {Model~unserialize} [config.unserialize] A function called to reformat the store method's return value
-   * automatically before passing it into `postStore` policies and subsequently to the HTTP response.
-   * @param {object} [config.initialMeta] The initial value of the `meta` object that is passed to the policies and
+   * @param {Meta} [config.initialMeta] The initial value of the `meta` object that is passed to the policies and
    * store methods.
+   * @example
+   * const Post = new Model({
+   *   name: 'post',
+   *   init: Db.connect(),
+   *   schema: {
+   *     type: 'object',
+   *     properties: {
+   *       title: { type: 'string' },
+   *       body: { type: 'string' },
+   *     },
+   *     require: ['title', 'body'],
+   *   },
+   *   policies: {
+   *     preSchema: {
+   *       create: { and: [getCurrentUserPolicy, canCreatePostPolicy] },
+   *       find: true,
+   *       findOne: true,
+   *       findOneAndUpdate: { and: [getCurrentUserPolicy, userIsOwnerOfPostPolicy] },
+   *       findOneAndDelete: { and: [getCurrentUserPolicy, userIsOwnerOfPostPolicy] },
+   *     },
+   *     postSchema: {
+   *       create: trimPostBodyPolicy,
+   *       findOneAndUpdate: trimPostBodyPolicy,
+   *     },
+   *     postStore: {
+   *       // These hooks are commonly used to add data to the request.
+   *       find: addTotalCountHeaderToResponsePolicy,
+   *     },
+   *   },
+   *   store: {
+   *     create: data => Db.insert('posts', data),
+   *     find: () => Db.selectAll('posts'),
+   *     findOne: id => Db.selectOne('posts', { id }),
+   *     findOneAndUpdate: (id, data) => Db.updateWhere('posts', { id }, data),
+   *     findOneAndDelete: id => Db.deleteWhere('posts', { id }),
+   *     serialize: data => mapKeys(data, property => snakeCase(property)),
+   *     unserialize: data => mapKeys(data, columnName => camelCase(columnName)),
+   *   },
+   * })
    */
   constructor(config) {
     this._config = Model._normalizeConfig(config)
@@ -186,7 +216,7 @@ export default class Model {
 
   /**
    * Gets the initial meta.
-   * @returns {object} The initial meta.
+   * @returns {Meta} The initial meta.
    */
   getInitialMeta() {
     return this.getConfig().initialMeta
@@ -194,7 +224,7 @@ export default class Model {
 
   /**
    * Gets the policies.
-   * @returns {object} The policies.
+   * @returns {ModelPolicies} The policies.
    */
   getPolicies() {
     return this.getConfig().policies
@@ -202,7 +232,7 @@ export default class Model {
 
   /**
    * Initializes the model if it hasn't been already.
-   * @returns {Promise.<*>} The result of the initialization.
+   * @returns {Promise.<*, Error>} The result of the initialization.
    */
   async init() {
     if (!this._initialization) {
@@ -213,10 +243,17 @@ export default class Model {
 
   /**
    * Creates a new resource.
-   * @param {object} data The properties of the resource to create.
-   * @param {object} [meta] Additional metadata to pass to the store.
+   * @param {Resource} data The properties of the resource to create.
+   * @param {Meta} [meta] Additional metadata to pass to the store.
    * @param {array} [hookArgs] *Used internally.* Arguments to pass into the hooks.
-   * @returns {Promise.<object>} The new resource data.
+   * @returns {Promise.<Resource, AutonymError>} The new resource data.
+   * @example
+   * const data = await Post.create({
+   *   title: 'Hello World',
+   *   body: 'This is my first post.',
+   * })
+   *
+   * console.log(data) // { id: '1', title: 'Hello World', body: 'This is my first post.' }
    */
   async create(data, meta = {}, hookArgs) {
     const serializedData = await this.serialize(data)
@@ -233,9 +270,13 @@ export default class Model {
   /**
    * Finds resources.
    * @param {object} [query] The query to filter by.
-   * @param {object} [meta] Additional metadata to pass to the store.
+   * @param {Meta} [meta] Additional metadata to pass to the store.
    * @param {array} [hookArgs] *Used internally.* Arguments to pass into the hooks.
-   * @returns {Promise.<object[]>} The data of the found resources.
+   * @returns {Promise.<Resource[], AutonymError>} The data of the found resources.
+   * @example
+   * const data = await Post.find()
+   *
+   * console.log(data) // [{ id: '1', title: 'Hello World', body: 'This is my first post.' }]
    */
   async find(query, meta = {}, hookArgs) {
     const runner = this._callWithHooks(null, hookArgs)
@@ -250,9 +291,13 @@ export default class Model {
   /**
    * Finds a resource.
    * @param {string} id The id of the resource to find.
-   * @param {object} [meta] Additional metadata to pass to the store.
+   * @param {Meta} [meta] Additional metadata to pass to the store.
    * @param {array} [hookArgs] *Used internally.* Arguments to pass into the hooks.
-   * @returns {Promise.<object>} The found resource data.
+   * @returns {Promise.<Resource, AutonymError>} The found resource data.
+   * @example
+   * const data = await Post.findOne('1')
+   *
+   * console.log(data) // { id: '1', title: 'Hello World', body: 'This is my first post.' }
    */
   async findOne(id, meta = {}, hookArgs) {
     const runner = this._callWithHooks('findOne', null, hookArgs)
@@ -267,12 +312,16 @@ export default class Model {
   /**
    * Updates a resource.
    * @param {string} id The id of the resource to update.
-   * @param {object} data The properties to update.
-   * @param {object} [_completeData] The complete resource with the properties to update merged in. If omitted, it
+   * @param {Resource} data The properties to update.
+   * @param {Resource} [_completeData] The complete resource with the properties to update merged in. If omitted, it
    * will be fetched.
-   * @param {object} [meta] Additional metadata to pass to the store.
+   * @param {Meta} [meta] Additional metadata to pass to the store.
    * @param {array} [hookArgs] *Used internally.* Arguments to pass into the hooks.
-   * @returns {Promise.<object>} The updated resource data.
+   * @returns {Promise.<Resource, AutonymError>} The updated resource data.
+   * @example
+   * const data = await Post.findOneAndUpdate('1', { title: 'Test' })
+   *
+   * console.log(data) // { id: '1', title: 'Test', body: 'This is my first post.' }
    */
   async findOneAndUpdate(id, data, _completeData = null, meta = {}, hookArgs) {
     const completeData = _completeData || (await this.getConfig().store.findOne(id))
@@ -294,9 +343,13 @@ export default class Model {
   /**
    * Deletes a resource.
    * @param {string} id The id of the resource to delete.
-   * @param {object} [meta] Additional metadata to pass to the store.
+   * @param {Meta} [meta] Additional metadata to pass to the store.
    * @param {array} [hookArgs] *Used internally.* Arguments to pass into the hooks.
-   * @returns {Promise.<object>} An object containing an `id` property set to the deleted resource's id.
+   * @returns {Promise.<object, AutonymError>} An object containing an `id` property set to the deleted resource's id.
+   * @example
+   * const data = await Post.findOneAndDelete('1')
+   *
+   * console.log(data) // { id: '1' }
    */
   async findOneAndDelete(id, meta = {}, hookArgs) {
     const runner = this._callWithHooks('findOneAndDelete', null, hookArgs)
@@ -311,29 +364,50 @@ export default class Model {
 
   /**
    * Serializes the data for a store method.
-   * @param {object} data The data to serialize.
-   * @returns {Promise.<object>} The serialized data.
+   * @param {Resource} data The data to serialize.
+   * @returns {Promise.<SerializedResource, AutonymError>} The serialized data.
+   * @example
+   * const data = await Post.serialize({ authorId: '42' })
+   *
+   * console.log(data) // { author_id: '42' }
    */
   async serialize(data) {
-    return this.getConfig().serialize(data)
+    return this.getConfig().store.serialize(data)
   }
 
   /**
    * Unserializes the data from a store method.
-   * @param {object} data The data to unserialize.
-   * @returns {Promise.<object>} The unserialized data.
+   * @param {SerializedResource} data The data to unserialize.
+   * @returns {Promise.<Resource, AutonymError>} The unserialized data.
+   * @example
+   * const data = await Post.unserialize({ author_id: '42' })
+   *
+   * console.log(data) // { authorId: '42' }
    */
   async unserialize(data) {
-    return this.getConfig().unserialize(data)
+    try {
+      return this.getConfig().store.unserialize(data)
+    } catch (err) {
+      throw AutonymError.fromError(err)
+    }
   }
 
   /**
    * Validates the data against the schema.
-   * @param {object} data The data to validate.
-   * @returns {Promise.<void>} Resolves with undefined.
+   * @param {Resource} data The data to validate. This must be a complete resource.
+   * @returns {Promise.<Resource, AutonymError>} Resolves with the validated data, which has unrecognized properties
+   * filtered out and default values added.
+   * @example
+   * const validatedData = await Post.validateAgainstSchema({ title: 'Hello World', xyz: 123 })
+   *
+   * console.log(validatedData) // { title: 'Hello World' }
    */
   async validateAgainstSchema(data) {
-    return this.getConfig().validateAgainstSchema(data)
+    try {
+      return this.getConfig().validateAgainstSchema(data)
+    } catch (err) {
+      throw AutonymError.fromError(err)
+    }
   }
 
   /**
@@ -349,10 +423,12 @@ export default class Model {
     try {
       await this.init()
       await this._callHook(method, 'preSchema', hookArgs)
+
+      let validatedData = null
       if (data) {
-        await this.validateAgainstSchema(data)
+        validatedData = await this.validateAgainstSchema(data)
       }
-      await this._callHook(method, 'postSchema', hookArgs)
+      await this._callHook(method, 'postSchema', [...hookArgs, validatedData])
 
       const result = yield
 
@@ -368,97 +444,3 @@ export default class Model {
     }
   }
 }
-
-/**
- * @callback Model~init
- * @returns {Promise.<*>|*} A promise if asynchronous.
- */
-
-/**
- * An object whose keys are store method names and whose values are asynchronous boolean expressions.
- * @typedef {object} PolicyLifecycleHook
- * @property {PolicyExpression} [create] The expression to run when the `create` method is called.
- * @property {PolicyExpression} [find] The expression to run when the `find` method is called.
- * @property {PolicyExpression} [findOne] The expression to run when the `findOne` method is called.
- * @property {PolicyExpression} [findOneAndUpdate] The expression to run when the `findOneAndUpdate` method is called.
- * @property {PolicyExpression} [findOneAndDelete] The expression to run when the `findOneAndUpdate` method is called.
- */
-
-/**
- * An expression may be a boolean to explicitly allow or deny the method, a policy function that is evaluated and
- * may deny the method by throwing or rejecting with an error, or an object with a property `and` or `or` whose
- * value is an array of these types.
- * @typedef {Operand} PolicyExpression
- */
-
-/**
- * @typedef {boolean|Policy|AndExpression|OrExpression} Operand
- */
-
-/**
- * @typedef {object} AndExpression
- * @property {Operand[]} and
- */
-
-/**
- * @typedef {object} OrExpression
- * @property {Operand[]} or
- */
-
-/**
- * A function that may aggregate the request and/or prevent the request by throwing an exception.
- * @callback Policy
- * @param {AutonymReq} req The request object.
- * @param {AutonymRes} res The response object.
- * @param {object} meta The meta object aggregated by policies during the request.
- * @returns {Promise.<*>|*} The return value is ignored.
- */
-
-/**
- * @callback Model~create
- * @param {object} data The serialized data to save.
- * @param {object} meta The meta object aggregated by policies during the request.
- * @returns {Promise.<object>|object} The saved record's data, including the `id` property.
- */
-
-/**
- * @callback Model~find
- * @param {object} query The URL query string converted to an object.
- * @param {object} meta The meta object aggregated by policies during the request.
- * @returns {Promise.<object[]>|object[]} The data of the records that match the query.
- */
-
-/**
- * @callback Model~findOne
- * @param {string} id The id of the resource to find.
- * @param {object} meta The meta object aggregated by policies during the request.
- * @returns {Promise.<object>|object} The data of the record with the given id.
- */
-
-/**
- * @callback Model~findOneAndUpdate
- * @param {string} id The id of the resource to update.
- * @param {object} data The serialized data to save.
- * @param {object} completeData The serialized data merged with the existing properties of the resource.
- * @param {object} meta The meta object aggregated by policies during the request.
- * @returns {Promise.<object>|object} The saved record's data, including all unchanged properties.
- */
-
-/**
- * @callback Model~findOneAndDelete
- * @param {string} id The id of the resource to delete.
- * @param {object} meta The meta object aggregated by policies during the request.
- * @returns {Promise.<*>|*} The return value is ignored.
- */
-
-/**
- * @callback Model~serialize
- * @param {object} data The data to serialize. It may be a complete or partial resource.
- * @returns {Promise.<object>|object} The serialized resource.
- */
-
-/**
- * @callback Model~unserialize
- * @param {object} data The data to unserialize.
- * @returns {Promise.<object>|object} The unserialized resource.
- */

@@ -7,6 +7,16 @@ const parseArgs = require('minimist')
 const INVALID_TAG = new Error('Tag is not a version tag')
 
 const publish = promisify(ghPages.publish)
+const _exec = promisify(childProcess.exec, { multiArgs: true })
+async function exec(command, options) {
+  const [stdout, stderr] = await _exec(command, options)
+  if (stdout) {
+    console.log(stdout)
+  }
+  if (stderr) {
+    console.error(stderr)
+  }
+}
 
 async function run() {
   const [, , ...argv] = process.argv
@@ -25,22 +35,11 @@ async function run() {
 
   await exec('npm run generate-docs')
 
-  await publish(DOCS_PATH, {
+  await publish('docs', {
     dest: version,
     add: true,
     message: `Publishing docs for v${version}`,
   })
-}
-
-const _exec = promisify(childProcess.exec, { multiArgs: true })
-async function exec(command, options) {
-  const [stdout, stderr] = await _exec(command, options)
-  if (stdout) {
-    console.log(stdout)
-  }
-  if (stderr) {
-    console.error(stderr)
-  }
 }
 
 run().catch(err => {

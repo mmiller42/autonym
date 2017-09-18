@@ -1,5 +1,3 @@
-/** @module */
-
 import { createErrorMiddleware, createStoreMiddleware } from './middleware'
 import { isPlainObject, values } from 'lodash'
 import Model from './Model'
@@ -11,7 +9,12 @@ import { Router as createRouter } from 'express'
  * @param {object} _config Configuration.
  * @param {Model[]|object.<string, Model>} _config.models A collection of model instances. This may be an object or
  * an array, but if it is an object, the keys will be ignored.
- * @returns {Promise.<Router>} A promise that resolves with an Express router.
+ * @returns {Promise.<Router, Error>} A promise that resolves with an Express router.
+ * @example
+ * const modelMiddleware = await createModelMiddleware({
+ *   models: [Post, User],
+ * })
+ * app.use(modelMiddleware)
  */
 export default async function createModelMiddleware(_config) {
   const config = normalizeConfig()

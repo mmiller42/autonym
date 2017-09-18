@@ -1,10 +1,10 @@
-/** @module */
-
 /**
  * Creates an Express middleware that responds to the request with either the requested data or the error. It only
  * handles requests that have passed through `createModelMiddleware`, and will forward other requests to the next
  * middleware
  * @returns {function[]} The Express middleware.
+ * @example
+ * app.use(createResponderMiddleware())
  */
 export default function createResponderMiddleware() {
   return [
