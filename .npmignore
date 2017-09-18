@@ -14,3 +14,6 @@ node_modules
 
 # Temporary files
 tmp
+
+# Generated documentation
+docs

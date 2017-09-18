@@ -1,6 +1,5 @@
 root = true
-
-[{src/**.{js,json},test/**.{js,json},*.json,.babelrc,*.md,.circleci/*.yml}]
+[{{src,jsdoc}/**/*.{js,json},*.js,.*rc,.*rc.json,**/*.{md,yml,html,css}}]
 indent_style = space
 indent_size = 2
 end_of_line = lf

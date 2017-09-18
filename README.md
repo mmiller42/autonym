@@ -4,27 +4,9 @@
 
 A KISS JSON REST API framework that can be mounted to your Express application.
 
-<details>
-  <summary><strong>Table of Contents</strong></summary>
-
-<!-- toc -->
-
-- [Philosophy](#philosophy)
-- [Guide](#guide)
-  * [Glossary](#glossary)
-  * [Hello World](#hello-world)
-- [API](#api)
-
-<!-- tocstop -->
-</details>
-
 ## Philosophy
 
-<details>
-  <summary>
-  Autonym is another framework built on top of <a href="https://expressjs.com/">Express</a> to simplify building REST APIs for your resources. However, its philosophy sets it apart from most other Node.js API frameworks.
-  </summary>
-  <br>
+Autonym is another framework built on top of <a href="https://expressjs.com/">Express</a> to simplify building REST APIs for your resources. However, its philosophy sets it apart from most other Node.js API frameworks.
 
 It is extremely lightweight and written in ES6. By design, it eliminates the need to scaffold controllers in your API, because they can be inferred automatically from your models. Models are driven by simple configuration objects and in many cases can just forward their arguments to an ORM. As a result, APIs built in Autonym require little coding but still offer total control over each CRUD action for a resource, and are very easy to understand at a glance.
 
@@ -47,27 +29,18 @@ It is extremely lightweight and written in ES6. By design, it eliminates the nee
 * **Error handling is a snap.** Autonym ships with its own error class that allows you to throw errors like you normally would, without being conscious of when they are runtime errors or simply bad requests. Errors thrown when using the programmatic API are passed on to error-handling middleware, while errors that occur during an HTTP request are intelligently (but still explicitly) handled and returned to the client.
 
 * **Embrace ES6.** Autonym app components are heavily class-based and Autonym and its sister projects are written with Babel. You can always write components with ES5, but Autonym is designed for modern apps.
-</details>
-<br>
-<details>
-  <summary>
-    It's worth noting that the developers behind Autonym envisioned a simplistic data model, and as a result there are some definite drawbacks and limitations to the built-in behaviors of the framework.
-  </summary>
+
+It's worth noting that the developers behind Autonym envisioned a simplistic data model, and as a result there are some definite drawbacks and limitations to the built-in behaviors of the framework.
 
 * Autonym has no intrinsic understanding of related resources. The API does not understand foreign references and will only return resource ids. This means that establishing relationships between models must be handled at the database layer or manually in the API layer. However, this eliminates some of the complexity with setting up and consuming an API with intricate routing, unintentionally costly joins, and recursive embedding.
 
 * Autonym requires all resources to have a primary key that is named id. Composite primary keys or primary keys named something different are not currently supported. This is to make REST calls trivial by using standard resource identifiers in the URL.
-</details>
 
 ## Guide
 
 ### Glossary
 
-<details>
-  <summary>
-    These are high-level concepts and vocabulary for working with an Autonym application.
-  </summary>
-  <br>
+These are high-level concepts and vocabulary for working with an Autonym application.
 
 * **Model**: A model is an instance of the `Model` class provided by Autonym. Constructed with a configuration object, a model defines its schema, policies, store methods, and so on. A model instance has static methods on it that make it trivial to import elsewhere in the application to create, read, update, and delete resources programmatically. It's also designed to plug into the Autonym middleware to be evaluated in a HTTP request.
 
@@ -86,7 +59,6 @@ It is extremely lightweight and written in ES6. By design, it eliminates the nee
 * **Responder middleware**: A middleware that can be mounted on your Express app, after the `autonym` middleware. In between the two middleware, you may install your own middleware to quash errors, add response headers, manipulate the payload, and so on. This middleware sends the response to the client.
 
 * **`AutonymError`**: A subclass of `Error`. Instances of `AutonymError` should be thrown whenever possible from policies and store methods. These errors have preset types that will determine the status code if they are thrown during an HTTP request; if not provided a code, it will be assumed that the error message should not be enclosed in the response.
-</details>
 
 ### Hello World
 
@@ -98,6 +70,12 @@ Here, we create a basic store that simply persists the records to memory, in an 
 import { AutonymError, Model, createModelMiddleware, createResponderMiddleware } from 'autonym'
 import bodyParser from 'body-parser'
 import express from 'express'
+
+// Make sure we crash on uncaught rejections (default Node behavior is inconsistent with synchronous exceptions)
+process.on('unhandledRejection', err => {
+  console.error(err)
+  process.exit(1)
+})
 
 // Example store implementation
 const inMemoryStore = () => {
@@ -138,9 +116,14 @@ const Person = new Model({
 const app = express()
 app.use(bodyParser.json({}))
 
-// Mount Autonym middleware
-app.use(createModelMiddleware([ Person ]))
-app.use(createResponderMiddleware())
+const mountAutonym = async () => {
+  // Mount Autonym middleware
+  const modelMiddleware = await createModelMiddleware({ models: [Person] })
+  app.use(modelMiddleware)
+  app.use(createResponderMiddleware())
+}
+
+mountAutonym()
 
 // Start HTTP server
 app.listen(3000, () => console.log('App is ready'))

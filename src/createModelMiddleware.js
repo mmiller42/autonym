@@ -1,10 +1,19 @@
+/** @module */
+
 import { createErrorMiddleware, createStoreMiddleware } from './middleware'
 import { isPlainObject, values } from 'lodash'
 import Model from './Model'
 import { checkForUnrecognizedProperties } from './utils/index'
 import { Router as createRouter } from 'express'
 
-export default async function autonym(_config) {
+/**
+ * Creates an Express middleware router that binds routes for all of the given models.
+ * @param {object} _config Configuration.
+ * @param {Model[]|object.<string, Model>} _config.models A collection of model instances. This may be an object or
+ * an array, but if it is an object, the keys will be ignored.
+ * @returns {Promise.<Router>} A promise that resolves with an Express router.
+ */
+export default async function createModelMiddleware(_config) {
   const config = normalizeConfig()
 
   const router = createRouter()
@@ -15,6 +24,8 @@ export default async function autonym(_config) {
     router.use(`/${model.getRoute()}`, createStoreMiddleware(model))
   })
   router.use(createErrorMiddleware())
+
+  return router
 
   function normalizeConfig() {
     if (!isPlainObject(_config)) {

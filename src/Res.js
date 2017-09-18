@@ -1,10 +1,31 @@
-import { defaultsDeep, get, set } from 'lodash'
-import HTTP from 'http-status-codes'
+/** @module */
 
+import HTTP from 'http-status-codes'
+import { defaultsDeep } from 'lodash'
+
+/**
+ * A wrapper for the response object with helper methods and access to Autonym model data.
+ */
 export default class Res {
+  /**
+   * The status code for successful find, findOne, findOneAndUpdate, and findOneAndDelete calls.
+   * @type {number}
+   * @constant
+   */
   static OK = HTTP.OK
+
+  /**
+   * The status code for successful create calls.
+   * @type {number}
+   * @constant
+   */
   static CREATED = HTTP.CREATED
 
+  /**
+   * @param {http.ServerResponse} raw The raw ServerResponse object.
+   * @param {Model} model The Autonym model instance.
+   * @param {object} meta The meta object aggregated by policies during the request.
+   */
   constructor(raw, model, meta) {
     raw.autonym = this
     raw.autonymMeta = meta
@@ -16,57 +37,96 @@ export default class Res {
     this._isPopulated = false
   }
 
+  /**
+   * Gets the raw response.
+   * @returns {http.ServerResponse} The raw response.
+   */
   getRaw() {
     return this._raw
   }
 
-  getData(key = null) {
+  /**
+   * Gets the data currently set for the response body.
+   * @returns {object} The data.
+   * @throws {ReferenceError} If the store method has not been called yet.
+   */
+  getData() {
     if (!this.isPopulated()) {
       throw new ReferenceError('Cannot get response data before store method has been called.')
     }
-    return key ? get(this._data, key) : this._data
+    return this._data
   }
 
-  setData(...args) {
+  /**
+   * Merges the currently set response data with the given data.
+   * @param {object} data The new properties to set.
+   * @returns {void}
+   * @throws {ReferenceError} If the store method has not been called yet.
+   */
+  setData(data) {
     if (!this.isPopulated()) {
       throw new ReferenceError('Cannot set response data before store method has been called.')
     }
 
-    if (args.length === 1) {
-      const [data] = args
-      this._data = defaultsDeep(this._data, data)
-    } else {
-      const [key, value] = args
-      set(this._data, key, value)
-    }
-
-    return this._data
+    this._data = defaultsDeep(this._data, data)
   }
 
+  /**
+   * Gets the currently set status code.
+   * @returns {number} The status code.
+   */
   getStatus() {
     return this._status
   }
 
+  /**
+   * Sets the status code.
+   * @param {number} status The status code.
+   * @returns {void}
+   */
   setStatus(status) {
     this._status = status
   }
 
+  /**
+   * Gets the model instance.
+   * @returns {Model} The model.
+   */
   getModel() {
     return this._model
   }
 
+  /**
+   * Gets the given header.
+   * @param {string} header The header to find.
+   * @returns {string|undefined} The header value.
+   */
   getHeader(header) {
     return this.getRaw().get(header)
   }
 
+  /**
+   * Sets the given header.
+   * @param {string} header The header to set.
+   * @param {string} value The value to set to.
+   * @returns {void}
+   */
   setHeader(header, value) {
     return this.getRaw().set(header, value)
   }
 
+  /**
+   * Whether the store method has populated the response data yet.
+   * @returns {boolean} True if the store method has been called.
+   */
   isPopulated() {
     return this._isPopulated
   }
 
+  /**
+   * Whether the response has been sent to the client.
+   * @returns {boolean} True if the response has been sent.
+   */
   isSent() {
     return this.getRaw().headerSent
   }
