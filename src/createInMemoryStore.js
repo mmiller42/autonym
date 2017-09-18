@@ -35,7 +35,7 @@ import AutonymError from './AutonymError'
  * try {
  *   await Person.findOne('1')
  * } catch (err) {
- *   console.log(err) // 'NOT_FOUND - Record not found.'
+ *   console.log(err) // '[NOT_FOUND] Record not found.'
  * }
  */
 const createInMemoryStore = () => {

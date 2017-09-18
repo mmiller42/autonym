@@ -108,8 +108,9 @@ export default class AutonymError extends Error {
    * const autonymError = new AutonymError(AutonymError.BAD_REQUEST, 'Something bad happened', { invalid: 'xyz' })
    */
   constructor(code, message, data = {}) {
-    super(`${code} - ${message}`)
-    this._code = code || AutonymError.INTERNAL_SERVER_ERROR
+    const normalizedCode = code || AutonymError.INTERNAL_SERVER_ERROR
+    super(`[${normalizedCode}] ${message}`)
+    this._code = normalizedCode
     this._message = message
     this._data = data
     this._isClientError = false

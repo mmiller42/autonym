@@ -11,32 +11,32 @@ const POLICY_LIFECYCLE_HOOKS = ['preSchema', 'postSchema', 'postStore']
  * Class that defines an entity type for a resource accessible in your API.
  */
 export default class Model {
-  static _normalizeConfig(_config) {
-    if (!isPlainObject(_config)) {
+  static _normalizeConfig(config) {
+    if (!isPlainObject(config)) {
       throw new TypeError('config parameter must be a plain object.')
     }
 
-    const { name } = _config
+    const { name } = config
 
     if (typeof name !== 'string' || name.length === 0) {
       throw new TypeError('config.name parameter must be a non-empty string.')
     }
-    if (_config.init !== undefined && typeof _config.init !== 'function') {
+    if (config.init !== undefined && typeof config.init !== 'function') {
       throw new TypeError('config.init parameter must be a function or undefined.')
     }
-    if (_config.schema !== null && !isPlainObject(_config.schema)) {
+    if (config.schema !== null && !isPlainObject(config.schema)) {
       throw new TypeError('config.schema parameter must be a JSON schema or explicitly null.')
     }
-    if (_config.schema && _config.schema.type !== 'object') {
+    if (config.schema && config.schema.type !== 'object') {
       throw new TypeError('config.schema.type parameter must be object.')
     }
-    if (_config.ajvOptions !== undefined && !isPlainObject(_config.ajvOptions)) {
+    if (config.ajvOptions !== undefined && !isPlainObject(config.ajvOptions)) {
       throw new TypeError('config.ajvOptions parameter must be a plain object or undefined.')
     }
-    if (_config.policies !== undefined && !isPlainObject(_config.policies)) {
+    if (config.policies !== undefined && !isPlainObject(config.policies)) {
       throw new TypeError('config.policies parameter must be a plain object or undefined.')
     }
-    if (_config.store === null || typeof _config.store !== 'object') {
+    if (config.store === null || typeof config.store !== 'object') {
       throw new TypeError('config.store parameter must be an object.')
     }
     ;[
@@ -48,18 +48,18 @@ export default class Model {
       'serialize',
       'unserialize',
     ].forEach(method => {
-      if (_config.store[method] !== undefined && typeof _config.store[method] !== 'function') {
+      if (config.store[method] !== undefined && typeof config.store[method] !== 'function') {
         throw new TypeError(`config.store.${method} must be a function or undefined.`)
       }
     })
-    if (_config.route !== undefined && (typeof _config.route !== 'string' || _config.route === 0)) {
+    if (config.route !== undefined && (typeof config.route !== 'string' || config.route === 0)) {
       throw new TypeError('config.route parameter must be a non-empty string or undefined.')
     }
-    if (_config.initialMeta !== undefined && !isPlainObject(_config.initialMeta)) {
+    if (config.initialMeta !== undefined && !isPlainObject(config.initialMeta)) {
       throw new TypeError('config.initialMeta parameter must be a plain object or undefined.')
     }
 
-    checkForUnrecognizedProperties('config', _config, [
+    checkForUnrecognizedProperties('config', config, [
       'name',
       'init',
       'schema',
@@ -68,12 +68,12 @@ export default class Model {
       'store',
       'route',
     ])
-    checkForUnrecognizedProperties('config.policies', _config.policies, POLICY_LIFECYCLE_HOOKS)
-    forEach(_config.policies, (hooks, hook) =>
+    checkForUnrecognizedProperties('config.policies', config.policies, POLICY_LIFECYCLE_HOOKS)
+    forEach(config.policies, (hooks, hook) =>
       checkForUnrecognizedProperties(`config.policies.${hook}`, hooks, STORE_METHODS)
     )
 
-    const config = defaultsDeep({}, _config, {
+    const normalizedConfig = defaultsDeep({}, config, {
       init: noop,
       schema: null,
       ajvOptions: {
@@ -104,12 +104,12 @@ export default class Model {
       initialMeta: {},
     })
 
-    const { init } = config
-    config.init = async () => init()
+    const { init } = normalizedConfig
+    normalizedConfig.init = async () => init()
 
-    if (config.schema) {
-      const validateAgainstSchema = new Ajv(config.ajvOptions).compile(config.schema)
-      config.validateAgainstSchema = async data => {
+    if (normalizedConfig.schema) {
+      const validateAgainstSchema = new Ajv(normalizedConfig.ajvOptions).compile(normalizedConfig.schema)
+      normalizedConfig.validateAgainstSchema = async data => {
         const validatedData = cloneDeep(data)
         if (!validateAgainstSchema(validatedData)) {
           throw new AutonymError(AutonymError.NOT_ACCEPTABLE, `Schema validation for model "${name}" failed.`, {
@@ -119,16 +119,18 @@ export default class Model {
         return validatedData
       }
     } else {
-      config.validateAgainstSchema = async data => data
+      normalizedConfig.validateAgainstSchema = async data => data
     }
 
-    config.store = mapValues(config.store, method => async (...args) => method.apply(config.store, args))
+    normalizedConfig.store = mapValues(normalizedConfig.store, method => async (...args) =>
+      method.apply(normalizedConfig.store, args)
+    )
 
-    const { serialize, unserialize } = config.store
-    config.store.serialize = async data => serialize(data)
-    config.store.unserialize = async data => unserialize(data)
+    const { serialize, unserialize } = normalizedConfig.store
+    normalizedConfig.store.serialize = async data => serialize(data)
+    normalizedConfig.store.unserialize = async data => unserialize(data)
 
-    return config
+    return normalizedConfig
   }
 
   /**
@@ -313,7 +315,7 @@ export default class Model {
    * Updates a resource.
    * @param {string} id The id of the resource to update.
    * @param {Resource} data The properties to update.
-   * @param {Resource} [_completeData] The complete resource with the properties to update merged in. If omitted, it
+   * @param {Resource} [completeData] The complete resource with the properties to update merged in. If omitted, it
    * will be fetched.
    * @param {Meta} [meta] Additional metadata to pass to the store.
    * @param {array} [hookArgs] *Used internally.* Arguments to pass into the hooks.
@@ -323,15 +325,15 @@ export default class Model {
    *
    * console.log(data) // { id: '1', title: 'Test', body: 'This is my first post.' }
    */
-  async findOneAndUpdate(id, data, _completeData = null, meta = {}, hookArgs) {
-    const completeData = _completeData || (await this.getConfig().store.findOne(id))
+  async findOneAndUpdate(id, data, completeData = null, meta = {}, hookArgs) {
+    const fetchedCompleteData = completeData || (await this.getConfig().store.findOne(id))
 
     const [serializedData, serializedCompleteData] = await Promise.all([
       this.serialize(data),
-      this.serialize(completeData),
+      this.serialize(fetchedCompleteData),
     ])
 
-    const runner = this._callWithHooks('findOneAndUpdate', completeData, hookArgs)
+    const runner = this._callWithHooks('findOneAndUpdate', fetchedCompleteData, hookArgs)
     await runner.next()
 
     const result = await this.getConfig().store.findOneAndUpdate(id, serializedData, serializedCompleteData, meta)

@@ -71,22 +71,22 @@ export default function createStoreMiddleware(model) {
     return true
   }
 
-  async function callStoreMethod(method, _req, _res, next) {
+  async function callStoreMethod(method, req, res, next) {
     const meta = model.getInitialMeta()
-    const req = new Req(_req, model, meta)
-    const res = new Res(_res, model, meta)
+    const autonymReq = new Req(req, model, meta)
+    const autonymRes = new Res(res, model, meta)
 
-    let err = null
+    let autonymError = null
     try {
-      const { status } = await method(req, res, meta)
-      if (res.getStatus() === null) {
-        res.setStatus(status)
+      const { status } = await method(autonymReq, autonymRes, meta)
+      if (autonymRes.getStatus() === null) {
+        autonymRes.setStatus(status)
       }
-    } catch (_err) {
-      err = AutonymError.fromError(_err).toClientError()
+    } catch (err) {
+      autonymError = AutonymError.fromError(err).toClientError()
     }
 
-    next(err)
+    next(autonymError)
   }
 
   async function create(req, res, meta) {
