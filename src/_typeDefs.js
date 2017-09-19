@@ -48,20 +48,22 @@
  */
 
 /**
- * An object mapping lifecycle hook names to lifecycle hooks. The hooks will be run for the given lifecycle event.
+ * An object mapping store method names to policy hooks. The hooks will be run for the given method. If the value is
+ * just `true`, it is assumed that all requests will be honored and no policies are necessary for any lifecycle event;
+ * if just `false`, it is assumed no requests will be honored.
  * @typedef {object} ModelPolicies
- * @property {object} [create] Policies to run for the `create` method.
+ * @property {object|boolean} [create] Policies to run for the `create` method.
  * @property {Operand} [create.preSchema] An expression to evaluate before the data is validated against the schema.
  * @property {Operand} [create.postSchema] An expression to evaluate after the data is validated against the schema.
  * @property {Operand} [create.preStore] An expression to evaluate before the data is passed to the store method.
  * @property {Operand} [create.postStore] An expression to evaluate after the store method has completed.
- * @property {object} [find] Policies to run for the `find` method.
+ * @property {object|boolean} [find] Policies to run for the `find` method.
  * @property {Operand} [find.preStore] An expression to evaluate before the data is passed to the store method.
  * @property {Operand} [find.postStore] An expression to evaluate after the store method has completed.
- * @property {object} [findOne] Policies to run for the `findOne` method.
+ * @property {object|boolean} [findOne] Policies to run for the `findOne` method.
  * @property {Operand} [findOne.preStore] An expression to evaluate before the data is passed to the store method.
  * @property {Operand} [findOne.postStore] An expression to evaluate after the store method has completed.
- * @property {object} [findOneAndUpdate] Policies to run for the `findOneAndUpdate` method.
+ * @property {object|boolean} [findOneAndUpdate] Policies to run for the `findOneAndUpdate` method.
  * @property {Operand} [findOneAndUpdate.preSchema] An expression to evaluate before the data is validated against the
  * schema.
  * @property {Operand} [findOneAndUpdate.postSchema] An expression to evaluate after the data is validated against the
@@ -69,7 +71,7 @@
  * @property {Operand} [findOneAndUpdate.preStore] An expression to evaluate before the data is passed to the store
  * method.
  * @property {Operand} [findOneAndUpdate.postStore] An expression to evaluate after the store method has completed.
- * @property {object} [findOneAndDelete] Policies to run for the `findOneAndDelete` method.
+ * @property {object|boolean} [findOneAndDelete] Policies to run for the `findOneAndDelete` method.
  * @property {Operand} [findOneAndDelete.preStore] An expression to evaluate before the data is passed to the store
  * method.
  * @property {Operand} [findOneAndDelete.postStore] An expression to evaluate after the store method has completed.

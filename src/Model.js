@@ -75,9 +75,15 @@ export default class Model {
       'route',
     ])
     checkForUnrecognizedProperties('config.policies', config.policies, STORE_METHODS)
-    forEach(config.policies, (hooks, method) =>
-      checkForUnrecognizedProperties(`config.policies.${method}`, hooks, POLICY_LIFECYCLE_HOOKS[method])
-    )
+    forEach(config.policies, (hooks, method) => {
+      if (typeof hooks === 'boolean') {
+        config.policies[method] = { preSchema: hooks }
+      } else if (isPlainObject(hooks)) {
+        checkForUnrecognizedProperties(`config.policies.${method}`, hooks, POLICY_LIFECYCLE_HOOKS[method])
+      } else {
+        throw new TypeError(`config.policies.${method} must be a plain object or a boolean.`)
+      }
+    })
 
     const normalizedConfig = defaultsDeep({}, config, {
       init: noop,
