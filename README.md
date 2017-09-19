@@ -15,7 +15,7 @@ npm install autonym
 ## Quick Start
 
 ```js
-import { AutonymError, Model, createInMemoryStore, createModelMiddleware, createResponderMiddleware } from 'autonym'
+import { Model, createInMemoryStore, createModelMiddleware, createResponderMiddleware } from 'autonym'
 import bodyParser from 'body-parser'
 import express from 'express'
 
@@ -40,9 +40,12 @@ const Person = new Model({
     },
     required: ['firstName', 'lastName'],
   },
+  // A simple store implementation that saves data in memory
   store: createInMemoryStore(),
 })
 
+// Models may need to be initialized, so `createModelMiddleware` returns a promise. This means that it's important that
+// any Express middleware that should be loaded *after* Autonym should only be attached to the app inside this function.
 const mountAutonym = async () => {
   // Mount Autonym middleware
   app.use(await createModelMiddleware({ models: [Person] }))
