@@ -19,13 +19,6 @@ import { Model, createInMemoryStore, createModelMiddleware, createResponderMiddl
 import bodyParser from 'body-parser'
 import express from 'express'
 
-// Make sure we crash on uncaught rejections (default Node behavior is inconsistent with synchronous exceptions)
-// See http://2ality.com/2016/04/unhandled-rejections.html#unhandled-rejections-in-nodejs
-process.on('unhandledRejection', err => {
-  console.error(err)
-  process.exit(1)
-})
-
 const app = express()
 app.use(bodyParser.json({}))
 
@@ -44,16 +37,19 @@ const Person = new Model({
   store: createInMemoryStore(),
 })
 
-// Models may need to be initialized, so `createModelMiddleware` returns a promise. This means that it's important that
-// any Express middleware that should be loaded *after* Autonym should only be attached to the app inside this function.
-const mountAutonym = async () => {
-  // Mount Autonym middleware
-  app.use(await createModelMiddleware({ models: [Person] }))
-  app.use(createResponderMiddleware())
-  console.log('Autonym is ready')
-}
+const modelMiddleware = createModelMiddleware({ models: [Person] })
 
-mountAutonym()
+// Listen for errors that occur when models are initialized. If you don't do this and any init functions for models
+// throw errors, they will be processed by Node's default unhandledRejection event handler, which may not report the
+// error and will not crash the app.
+Promise.all(modelMiddleware.modelInitializations).catch(err => {
+  console.error(err)
+  process.exit(1)
+})
+
+// Mount Autonym middleware
+app.use(modelMiddleware)
+app.use(createResponderMiddleware())
 
 // Start HTTP server
 app.listen(3000, () => console.log('API is ready'))

@@ -20,8 +20,8 @@ export default function createStoreMiddleware(model) {
   return router
 
   function createPolicyHooks() {
-    return mapValues(model.getPolicies(), (methods, hook) =>
-      mapValues(methods, expression => async (req, res, meta, data) => {
+    return mapValues(model.getPolicies(), hooks =>
+      mapValues(hooks, (expression, hook) => async (req, res, meta, data) => {
         if (hook === 'postSchema') {
           if (data) {
             req.setData(data, true)

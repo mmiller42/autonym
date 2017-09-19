@@ -50,49 +50,54 @@
 /**
  * An object mapping lifecycle hook names to lifecycle hooks. The hooks will be run for the given lifecycle event.
  * @typedef {object} ModelPolicies
- * @property {PolicyLifecycleHook} [preSchema] A map of store method to policy expression of the policies to run
- * before schema validation. These policies are run whether the model has a defined schema or not.
- * @property {PolicyLifecycleHook} [postSchema] A map of store method to policy expression of the policies to run
- * after schema validation. These policies are run whether the model has a defined schema or not.
- * @property {PolicyLifecycleHook} [postStore] A map of store method to policy expression of the policies to run
- * after the store method is called.
+ * @property {object} [create] Policies to run for the `create` method.
+ * @property {Operand} [create.preSchema] An expression to evaluate before the data is validated against the schema.
+ * @property {Operand} [create.postSchema] An expression to evaluate after the data is validated against the schema.
+ * @property {Operand} [create.preStore] An expression to evaluate before the data is passed to the store method.
+ * @property {Operand} [create.postStore] An expression to evaluate after the store method has completed.
+ * @property {object} [find] Policies to run for the `find` method.
+ * @property {Operand} [find.preStore] An expression to evaluate before the data is passed to the store method.
+ * @property {Operand} [find.postStore] An expression to evaluate after the store method has completed.
+ * @property {object} [findOne] Policies to run for the `findOne` method.
+ * @property {Operand} [findOne.preStore] An expression to evaluate before the data is passed to the store method.
+ * @property {Operand} [findOne.postStore] An expression to evaluate after the store method has completed.
+ * @property {object} [findOneAndUpdate] Policies to run for the `findOneAndUpdate` method.
+ * @property {Operand} [findOneAndUpdate.preSchema] An expression to evaluate before the data is validated against the
+ * schema.
+ * @property {Operand} [findOneAndUpdate.postSchema] An expression to evaluate after the data is validated against the
+ * schema.
+ * @property {Operand} [findOneAndUpdate.preStore] An expression to evaluate before the data is passed to the store
+ * method.
+ * @property {Operand} [findOneAndUpdate.postStore] An expression to evaluate after the store method has completed.
+ * @property {object} [findOneAndDelete] Policies to run for the `findOneAndDelete` method.
+ * @property {Operand} [findOneAndDelete.preStore] An expression to evaluate before the data is passed to the store
+ * method.
+ * @property {Operand} [findOneAndDelete.postStore] An expression to evaluate after the store method has completed.
  * @example
  * const Post = new Model({
  *   name: 'post',
  *   policies: {
- *     preSchema: {
- *       // Can create posts if the user is logged in and has the proper privilege.
- *       create: { and: [getCurrentUserPolicy, canCreatePostPolicy] },
- *       // All posts can be fetched by anyone.
- *       find: true,
- *       findOne: true,
- *       // Can update and delete posts if the user is logged in and is the owner of the given post.
- *       findOneAndUpdate: { and: [getCurrentUserPolicy, userIsOwnerOfPostPolicy] },
- *       findOneAndDelete: { and: [getCurrentUserPolicy, userIsOwnerOfPostPolicy] },
+ *     create: {
+ *       // Users must be logged in and have the proper permission to create a post
+ *       preSchema: { and: [getCurrentUserPolicy, canCreatePostPolicy] },
+ *       // Once the post is validated, it is safe to read and manipulate the request data
+ *       postSchema: trimPostBodyPolicy,
  *     },
- *     postSchema: {
- *       // After we have validated and filtered the request, we can safely sanitize the data further.
- *       create: trimPostBodyPolicy,
- *       findOneAndUpdate: trimPostBodyPolicy,
+ *     find: {
+ *       // All requests to get all posts should include a header with the total count
+ *       postStore: addTotalCountHeaderToResponsePolicy,
  *     },
- *     postStore: {
- *       // These hooks are commonly used to add data to the request.
- *       find: addTotalCountHeaderToResponsePolicy,
+ *     findOneAndUpdate: {
+ *       // Users must be logged in and own the post that they are trying to update
+ *       preSchema: { and: [getCurrentUserPolicy, userIsOwnerOfPostPolicy] },
+ *       postSchema: trimPostBodyPolicy,
+ *     },
+ *     findOneAndDelete: {
+ *       preStore: { and: [getCurrentUserPolicy, userIsOwnerOfPostPolicy] },
  *     },
  *   },
  *   store: {},
  * })
- */
-
-/**
- * An object mapping store method names to asynchronous boolean expressions (Operands). These expressions will be
- * run for the lifecycle event for the given store method.
- * @typedef {object} PolicyLifecycleHook
- * @property {Operand} [create] The expression to run when the `create` method is called.
- * @property {Operand} [find] The expression to run when the `find` method is called.
- * @property {Operand} [findOne] The expression to run when the `findOne` method is called.
- * @property {Operand} [findOneAndUpdate] The expression to run when the `findOneAndUpdate` method is called.
- * @property {Operand} [findOneAndDelete] The expression to run when the `findOneAndUpdate` method is called.
  */
 
 /**

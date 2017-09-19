@@ -9,19 +9,29 @@ import { Router as createRouter } from 'express'
  * @param {object} config Configuration.
  * @param {Model[]|object.<string, Model>} config.models A collection of model instances. This may be an object or
  * an array, but if it is an object, the keys will be ignored.
- * @returns {Promise.<Router, Error>} A promise that resolves with an Express router.
+ * @returns {Promise.<Router, Error>} A promise that resolves with an Express router. The router has an additional
+ * property `modelInitializations` which is an array of promises, in case you want to capture errors from the init
+ * functions.
  * @example
- * const modelMiddleware = await createModelMiddleware({
+ * app.use(createModelMiddleware({
+ *   models: [Post, User],
+ * }))
+ * @example
+ * const modelMiddleware = createModelMiddleware({
  *   models: [Post, User],
  * })
  * app.use(modelMiddleware)
+ *
+ * Promise.all(modelMiddleware.modelInitializations).catch(err => {
+ *   console.error(err)
+ *   process.exit(1)
+ * })
  */
-export default async function createModelMiddleware(config) {
+export default function createModelMiddleware(config) {
   const normalizedConfig = normalizeConfig(config)
 
   const router = createRouter()
-
-  await initializeModels()
+  router.modelInitializations = normalizedConfig.models.map(model => model.init())
 
   normalizedConfig.models.forEach(model => {
     router.use(`/${model.getRoute()}`, createStoreMiddleware(model))
@@ -29,10 +39,6 @@ export default async function createModelMiddleware(config) {
   router.use(createErrorMiddleware())
 
   return router
-
-  async function initializeModels() {
-    await Promise.all(normalizedConfig.models.map(model => model.init()))
-  }
 }
 
 function normalizeConfig(config) {

@@ -1,11 +1,17 @@
 import { checkForUnrecognizedProperties, cloneInstance, filterToProperties } from './utils/index'
-import { cloneDeep, defaultsDeep, forEach, isPlainObject, kebabCase, mapValues, noop } from 'lodash'
+import { cloneDeep, defaultsDeep, forEach, isPlainObject, kebabCase, mapValues, noop, reduce } from 'lodash'
 import Ajv from 'ajv'
 import AutonymError from './AutonymError'
 import { pluralize } from 'inflection'
 
 const STORE_METHODS = ['create', 'find', 'findOne', 'findOneAndUpdate', 'findOneAndDelete']
-const POLICY_LIFECYCLE_HOOKS = ['preSchema', 'postSchema', 'postStore']
+const POLICY_LIFECYCLE_HOOKS = {
+  create: ['preSchema', 'postSchema', 'preStore', 'postStore'],
+  find: ['preStore', 'postStore'],
+  findOne: ['preStore', 'postStore'],
+  findOneAndUpdate: ['preSchema', 'postSchema', 'preStore', 'postStore'],
+  findOneAndDelete: ['preStore', 'postStore'],
+}
 
 /**
  * Class that defines an entity type for a record accessible in your API.
@@ -68,9 +74,9 @@ export default class Model {
       'store',
       'route',
     ])
-    checkForUnrecognizedProperties('config.policies', config.policies, POLICY_LIFECYCLE_HOOKS)
-    forEach(config.policies, (hooks, hook) =>
-      checkForUnrecognizedProperties(`config.policies.${hook}`, hooks, STORE_METHODS)
+    checkForUnrecognizedProperties('config.policies', config.policies, STORE_METHODS)
+    forEach(config.policies, (hooks, method) =>
+      checkForUnrecognizedProperties(`config.policies.${method}`, hooks, POLICY_LIFECYCLE_HOOKS[method])
     )
 
     const normalizedConfig = defaultsDeep({}, config, {
@@ -83,13 +89,17 @@ export default class Model {
         useDefaults: true,
         errorDataPath: 'property',
       },
-      policies: POLICY_LIFECYCLE_HOOKS.reduce((hooks, hook) => {
-        hooks[hook] = STORE_METHODS.reduce((methods, method) => {
-          methods[method] = true
-          return methods
-        }, {})
-        return hooks
-      }, {}),
+      policies: reduce(
+        POLICY_LIFECYCLE_HOOKS,
+        (policies, hooks, method) => {
+          policies[method] = hooks.reduce((methodHooks, hook) => {
+            methodHooks[hook] = true
+            return methodHooks
+          }, {})
+          return policies
+        },
+        {}
+      ),
       store: {
         ...STORE_METHODS.reduce((methods, method) => {
           methods[method] = () => {
@@ -159,20 +169,19 @@ export default class Model {
    *     require: ['title', 'body'],
    *   },
    *   policies: {
-   *     preSchema: {
-   *       create: { and: [getCurrentUserPolicy, canCreatePostPolicy] },
-   *       find: true,
-   *       findOne: true,
-   *       findOneAndUpdate: { and: [getCurrentUserPolicy, userIsOwnerOfPostPolicy] },
-   *       findOneAndDelete: { and: [getCurrentUserPolicy, userIsOwnerOfPostPolicy] },
+   *     create: {
+   *       preSchema: { and: [getCurrentUserPolicy, canCreatePostPolicy] },
+   *       postSchema: trimPostBodyPolicy,
    *     },
-   *     postSchema: {
-   *       create: trimPostBodyPolicy,
-   *       findOneAndUpdate: trimPostBodyPolicy,
+   *     find: {
+   *       postStore: addTotalCountHeaderToResponsePolicy,
    *     },
-   *     postStore: {
-   *       // These hooks are commonly used to add data to the request.
-   *       find: addTotalCountHeaderToResponsePolicy,
+   *     findOneAndUpdate: {
+   *       preSchema: { and: [getCurrentUserPolicy, userIsOwnerOfPostPolicy] },
+   *       postSchema: trimPostBodyPolicy,
+   *     },
+   *     findOneAndDelete: {
+   *       preStore: { and: [getCurrentUserPolicy, userIsOwnerOfPostPolicy] },
    *     },
    *   },
    *   store: {
@@ -258,6 +267,13 @@ export default class Model {
    * console.log(data) // { id: '1', title: 'Hello World', body: 'This is my first post.' }
    */
   async create(data, meta = {}, hookArgs) {
+    if (!isPlainObject(data)) {
+      throw new TypeError('data parameter must be a plain object.')
+    }
+    if (!isPlainObject(meta)) {
+      throw new TypeError('meta parameter must be a plain object.')
+    }
+
     const result = await this._callWithHooks(
       'create',
       data,
@@ -283,6 +299,10 @@ export default class Model {
    * console.log(data) // [{ id: '1', title: 'Hello World', body: 'This is my first post.' }]
    */
   async find(query, meta = {}, hookArgs) {
+    if (!isPlainObject(meta)) {
+      throw new TypeError('meta parameter must be a plain object.')
+    }
+
     const results = await this._callWithHooks('find', null, () => this.getConfig().store.find(query, meta), hookArgs)
 
     return Promise.all(results.map(async result => this.unserialize(result)))
@@ -300,6 +320,13 @@ export default class Model {
    * console.log(data) // { id: '1', title: 'Hello World', body: 'This is my first post.' }
    */
   async findOne(id, meta = {}, hookArgs) {
+    if (typeof id !== 'string' || id.length === 0) {
+      throw new TypeError('id parameter must be a non-empty string.')
+    }
+    if (!isPlainObject(meta)) {
+      throw new TypeError('meta parameter must be a plain object.')
+    }
+
     const result = await this._callWithHooks('findOne', null, () => this.getConfig().store.findOne(id, meta), hookArgs)
 
     return this.unserialize(result)
@@ -320,6 +347,19 @@ export default class Model {
    * console.log(data) // { id: '1', title: 'Test', body: 'This is my first post.' }
    */
   async findOneAndUpdate(id, data, completeData = null, meta = {}, hookArgs) {
+    if (typeof id !== 'string' || id.length === 0) {
+      throw new TypeError('id parameter must be a non-empty string.')
+    }
+    if (!isPlainObject(data)) {
+      throw new TypeError('data parameter must be a plain object.')
+    }
+    if (completeData && !isPlainObject(completeData)) {
+      throw new TypeError('completeData parameter must be a plain object or undefined.')
+    }
+    if (!isPlainObject(meta)) {
+      throw new TypeError('meta parameter must be a plain object.')
+    }
+
     const fetchedCompleteData = completeData || (await this.getConfig().store.findOne(id))
 
     const result = await this._callWithHooks(
@@ -351,6 +391,13 @@ export default class Model {
    * console.log(data) // { id: '1' }
    */
   async findOneAndDelete(id, meta = {}, hookArgs) {
+    if (typeof id !== 'string' || id.length === 0) {
+      throw new TypeError('id parameter must be a non-empty string.')
+    }
+    if (!isPlainObject(meta)) {
+      throw new TypeError('meta parameter must be a plain object.')
+    }
+
     const result = await this._callWithHooks(
       'findOneAndDelete',
       null,
@@ -424,17 +471,22 @@ export default class Model {
   async _callWithHooks(method, data, fn, hookArgs = []) {
     try {
       await this.init()
-      await this._callHook(method, 'preSchema', hookArgs)
 
       let validatedData = null
       if (data) {
+        await this._callHook(method, 'preSchema', hookArgs)
+
         validatedData = await this.validateAgainstSchema(data)
+
+        await this._callHook(method, 'postSchema', [...hookArgs, validatedData])
       }
-      await this._callHook(method, 'postSchema', [...hookArgs, validatedData])
+
+      await this._callHook(method, 'preStore', hookArgs)
 
       const result = await fn(validatedData)
 
       await this._callHook(method, 'postStore', [...hookArgs, result])
+
       return result
     } catch (err) {
       throw AutonymError.fromError(err)
@@ -443,7 +495,7 @@ export default class Model {
 
   async _callHook(method, hook, hookArgs) {
     if (this._hooks) {
-      await this._hooks[hook][method](...hookArgs)
+      await this._hooks[method][hook](...hookArgs)
     }
   }
 }
