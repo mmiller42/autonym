@@ -33,7 +33,7 @@ export default class Req {
 
   /**
    * Gets the data from the request body.
-   * @returns {Resource} The data.
+   * @returns {Record} The data.
    * @throws {ReferenceError} If the request does not have a body.
    */
   getData() {
@@ -45,7 +45,7 @@ export default class Req {
 
   /**
    * Merges the request data with the given data, without modifying the original request.
-   * @param {Resource} data The new properties to set.
+   * @param {Record} data The new properties to set.
    * @param {boolean} [replace] If true, replaces the data on the response instead of merging it.
    * @returns {void}
    * @throws {ReferenceError} If the request does not have a body.
@@ -77,8 +77,8 @@ export default class Req {
   }
 
   /**
-   * For update queries, gets the data of the original resource to update. For create queries, gets an empty object.
-   * @returns {Promise.<Resource, AutonymError>} The original resource data.
+   * For update queries, gets the data of the original record to update. For create queries, gets an empty object.
+   * @returns {Promise.<Record, AutonymError>} The original record data.
    * @throws {ReferenceError} If the request is not a create or update request.
    * @example
    * console.log(req.getData()) // { title: 'Test' }
@@ -97,7 +97,7 @@ export default class Req {
 
   /**
    * Gets the result of merging the original data (see `#getOriginalData`) with the request data.
-   * @returns {Promise.<Resource, AutonymError>} The merged data.
+   * @returns {Promise.<Record, AutonymError>} The merged data.
    * @example
    * console.log(req.getData()) // { title: 'Test' }
    * const originalData = await req.getCompleteData()
@@ -125,8 +125,8 @@ export default class Req {
   }
 
   /**
-   * Gets the requested resource id.
-   * @returns {string} The resource id.
+   * Gets the requested record id.
+   * @returns {string} The record id.
    * @throws {ReferenceError} If it is a create or find request.
    */
   getId() {
@@ -227,7 +227,7 @@ export default class Req {
   }
 
   /**
-   * Whether this is a request for a particular resource.
+   * Whether this is a request for a particular record.
    * @returns {boolean} True if it is a findOne, findOneAndUpdate, or findOneAndDelete request.
    */
   hasId() {

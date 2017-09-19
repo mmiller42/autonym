@@ -8,7 +8,7 @@ const STORE_METHODS = ['create', 'find', 'findOne', 'findOneAndUpdate', 'findOne
 const POLICY_LIFECYCLE_HOOKS = ['preSchema', 'postSchema', 'postStore']
 
 /**
- * Class that defines an entity type for a resource accessible in your API.
+ * Class that defines an entity type for a record accessible in your API.
  */
 export default class Model {
   static _normalizeConfig(config) {
@@ -142,7 +142,7 @@ export default class Model {
    * @param {AjvOptions} [config.ajvOptions] Additional options to pass to the Ajv instance.
    * @param {ModelPolicies} [config.policies] Configuration policies.
    * @param {Store} config.store Configuration store.
-   * @param {string} [config.route] The route to use for requests of this type of resource. Defaults to pluralizing
+   * @param {string} [config.route] The route to use for requests of this type of record. Defaults to pluralizing
    * the `name` property and then converting it to kebab-case.
    * @param {Meta} [config.initialMeta] The initial value of the `meta` object that is passed to the policies and
    * store methods.
@@ -244,11 +244,11 @@ export default class Model {
   }
 
   /**
-   * Creates a new resource.
-   * @param {Resource} data The properties of the resource to create.
+   * Creates a new record.
+   * @param {Record} data The properties of the record to create.
    * @param {Meta} [meta] Additional metadata to pass to the store.
    * @param {array} [hookArgs] *Used internally.* Arguments to pass into the hooks.
-   * @returns {Promise.<Resource, AutonymError>} The new resource data.
+   * @returns {Promise.<Record, AutonymError>} The new record data.
    * @example
    * const data = await Post.create({
    *   title: 'Hello World',
@@ -272,11 +272,11 @@ export default class Model {
   }
 
   /**
-   * Finds resources.
+   * Finds records.
    * @param {object} [query] The query to filter by.
    * @param {Meta} [meta] Additional metadata to pass to the store.
    * @param {array} [hookArgs] *Used internally.* Arguments to pass into the hooks.
-   * @returns {Promise.<Resource[], AutonymError>} The data of the found resources.
+   * @returns {Promise.<Record[], AutonymError>} The data of the found records.
    * @example
    * const data = await Post.find()
    *
@@ -289,11 +289,11 @@ export default class Model {
   }
 
   /**
-   * Finds a resource.
-   * @param {string} id The id of the resource to find.
+   * Finds a record.
+   * @param {string} id The id of the record to find.
    * @param {Meta} [meta] Additional metadata to pass to the store.
    * @param {array} [hookArgs] *Used internally.* Arguments to pass into the hooks.
-   * @returns {Promise.<Resource, AutonymError>} The found resource data.
+   * @returns {Promise.<Record, AutonymError>} The found record data.
    * @example
    * const data = await Post.findOne('1')
    *
@@ -306,14 +306,14 @@ export default class Model {
   }
 
   /**
-   * Updates a resource.
-   * @param {string} id The id of the resource to update.
-   * @param {Resource} data The properties to update.
-   * @param {Resource} [completeData] The complete resource with the properties to update merged in. If omitted, it
+   * Updates a record.
+   * @param {string} id The id of the record to update.
+   * @param {Record} data The properties to update.
+   * @param {Record} [completeData] The complete record with the properties to update merged in. If omitted, it
    * will be fetched.
    * @param {Meta} [meta] Additional metadata to pass to the store.
    * @param {array} [hookArgs] *Used internally.* Arguments to pass into the hooks.
-   * @returns {Promise.<Resource, AutonymError>} The updated resource data.
+   * @returns {Promise.<Record, AutonymError>} The updated record data.
    * @example
    * const data = await Post.findOneAndUpdate('1', { title: 'Test' })
    *
@@ -340,11 +340,11 @@ export default class Model {
   }
 
   /**
-   * Deletes a resource.
-   * @param {string} id The id of the resource to delete.
+   * Deletes a record.
+   * @param {string} id The id of the record to delete.
    * @param {Meta} [meta] Additional metadata to pass to the store.
    * @param {array} [hookArgs] *Used internally.* Arguments to pass into the hooks.
-   * @returns {Promise.<object, AutonymError>} An object containing an `id` property set to the deleted resource's id.
+   * @returns {Promise.<object, AutonymError>} An object containing an `id` property set to the deleted record's id.
    * @example
    * const data = await Post.findOneAndDelete('1')
    *
@@ -366,8 +366,8 @@ export default class Model {
 
   /**
    * Serializes the data for a store method.
-   * @param {Resource} data The data to serialize.
-   * @returns {Promise.<SerializedResource, AutonymError>} The serialized data.
+   * @param {Record} data The data to serialize.
+   * @returns {Promise.<SerializedRecord, AutonymError>} The serialized data.
    * @example
    * const data = await Post.serialize({ authorId: '42' })
    *
@@ -379,8 +379,8 @@ export default class Model {
 
   /**
    * Unserializes the data from a store method.
-   * @param {SerializedResource} data The data to unserialize.
-   * @returns {Promise.<Resource, AutonymError>} The unserialized data.
+   * @param {SerializedRecord} data The data to unserialize.
+   * @returns {Promise.<Record, AutonymError>} The unserialized data.
    * @example
    * const data = await Post.unserialize({ author_id: '42' })
    *
@@ -396,8 +396,8 @@ export default class Model {
 
   /**
    * Validates the data against the schema.
-   * @param {Resource} data The data to validate. This must be a complete resource.
-   * @returns {Promise.<Resource, AutonymError>} Resolves with the validated data, which has unrecognized properties
+   * @param {Record} data The data to validate. This must be a complete record.
+   * @returns {Promise.<Record, AutonymError>} Resolves with the validated data, which has unrecognized properties
    * filtered out and default values added.
    * @example
    * const validatedData = await Post.validateAgainstSchema({ title: 'Hello World', xyz: 123 })

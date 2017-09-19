@@ -47,7 +47,7 @@ export default class Res {
 
   /**
    * Gets the data currently set for the response body.
-   * @returns {Resource} The data.
+   * @returns {Record} The data.
    * @throws {ReferenceError} If the store method has not been called yet.
    */
   getData() {
@@ -59,7 +59,7 @@ export default class Res {
 
   /**
    * Merges the currently set response data with the given data.
-   * @param {Resource} data The new properties to set.
+   * @param {Record} data The new properties to set.
    * @param {boolean} [replace] If true, replaces the data on the response instead of merging it.
    * @returns {void}
    * @throws {ReferenceError} If the store method has not been called yet.

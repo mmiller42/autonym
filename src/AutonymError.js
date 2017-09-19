@@ -33,7 +33,7 @@ export default class AutonymError {
   static METHOD_NOT_ALLOWED = 'METHOD_NOT_ALLOWED'
 
   /**
-   * Code indicating the requested resource does not exist.
+   * Code indicating the requested record does not exist.
    * @constant
    * @type {string}
    */

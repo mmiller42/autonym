@@ -183,24 +183,24 @@
  */
 
 /**
- * An object that has methods for CRUD operations for a typical resource. It does not matter if this is a plain
+ * An object that has methods for CRUD operations for a typical record. It does not matter if this is a plain
  * object or an instance of a Store class, as long as it has these members on it.
  * @typedef {object} Store
- * @property {function(data: SerializedResource, meta: Meta): Promise.<SerializedResource, Error>|SerializedResource}
- * [create] A function called to create a new resource.
- * @property {function(query: object, meta: Meta): Promise.<SerializedResource[], Error>|SerializedResource[]} [find]
- * A function called to find resources.
- * @property {function(id: string, meta: Meta): Promise.<SerializedResource, Error>|SerializedResource} [findOne] A
- * function called to find a single resource.
- * @property {function(id: string, data: SerializedResource, completeData: SerializedResource, meta: Meta):
- * Promise.<SerializedResource, Error>|SerializedResource} [findOneAndUpdate] A function called to update a single
- * resource.
+ * @property {function(data: SerializedRecord, meta: Meta): Promise.<SerializedRecord, Error>|SerializedRecord}
+ * [create] A function called to create a new record.
+ * @property {function(query: object, meta: Meta): Promise.<SerializedRecord[], Error>|SerializedRecord[]} [find]
+ * A function called to find records.
+ * @property {function(id: string, meta: Meta): Promise.<SerializedRecord, Error>|SerializedRecord} [findOne] A
+ * function called to find a single record.
+ * @property {function(id: string, data: SerializedRecord, completeData: SerializedRecord, meta: Meta):
+ * Promise.<SerializedRecord, Error>|SerializedRecord} [findOneAndUpdate] A function called to update a single
+ * record.
  * @property {function(id: string, meta: Meta): Promise.<*, Error>|*} [findOneAndDelete] A function called to delete
- * a single resource.
- * @param {function(data: Resource): Promise.<SerializedResource, Error>|SerializedResource} [serialize] A function
+ * a single record.
+ * @param {function(data: Record): Promise.<SerializedRecord, Error>|SerializedRecord} [serialize] A function
  * called to reformat the request body automatically before passing it into the `create` and `findOneAndUpdate`
  * store methods. It must be able to handle partial data objects.
- * @param {function(data: SerializedResource): Promise.<Resource, Error>|Resource} [unserialize] A function called to
+ * @param {function(data: SerializedRecord): Promise.<Record, Error>|Record} [unserialize] A function called to
  * reformat the store method's return value automatically before passing it into `postStore` policies and
  * subsequently to the response.
  * @example
@@ -222,17 +222,17 @@
  */
 
 /**
- * An object that represents a record that may be operated on by a model. A resource may be partial (e.g. if it is
+ * An object that represents a record that may be operated on by a model. A record may be partial (e.g. if it is
  * the properties to update in a findOneAndUpdate request). If it is the result of a store method, it should at
  * least have an `id` property.
- * @typedef {object} Resource
+ * @typedef {object} Record
  */
 
 /**
- * A Resource that has been transformed by the serialize function as a matter of convenience. It is only used in the
- * store methods and is always unserialized back into a Resource before being passed onto other code outside the
+ * A Record that has been transformed by the serialize function as a matter of convenience. It is only used in the
+ * store methods and is always unserialized back into a Record before being passed onto other code outside the
  * store methods.
- * @typedef {object} SerializedResource
+ * @typedef {object} SerializedRecord
  */
 
 /**

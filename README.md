@@ -161,9 +161,9 @@ curl http://localhost:3000/people/1
 
 ## Philosophy
 
-Autonym is another framework built on top of <a href="https://expressjs.com/">Express</a> to simplify building REST APIs for your resources. However, its philosophy sets it apart from most other Node.js API frameworks.
+Autonym is another framework built on top of <a href="https://expressjs.com/">Express</a> to simplify building REST APIs for your records. However, its philosophy sets it apart from most other Node.js API frameworks.
 
-It is extremely lightweight and written in ES6. By design, it eliminates the need to scaffold controllers in your API, because they can be inferred automatically from your models. Models are driven by simple configuration objects and in many cases can just forward their arguments to an ORM. As a result, APIs built in Autonym require little coding but still offer total control over each CRUD action for a resource, and are very easy to understand at a glance.
+It is extremely lightweight and written in ES6. By design, it eliminates the need to scaffold controllers in your API, because they can be inferred automatically from your models. Models are driven by simple configuration objects and in many cases can just forward their arguments to an ORM. As a result, APIs built in Autonym require little coding but still offer total control over each CRUD action for a record, and are very easy to understand at a glance.
 
 * **It's just middleware.** Most frameworks take over your entire application, making it difficult to adjust an existing app to the new framework's setup. This also results in endless frustration when trying to do something the framework isn't designed to do. Autonym is just mounted like any other middleware, so you can add other middleware and handlers before or after Autonym to do whatever you want, the way you normally would.
 
@@ -179,7 +179,7 @@ It is extremely lightweight and written in ES6. By design, it eliminates the nee
 
 * **A clear distinction between a programmatic API and REST API, but without controllers.** Autonym splits the work of validating into two distinct phases: schemas and policies. You define them together, but policies, which only are applicable to your REST API, are not run when you just want to import your model and insert a record. This means you don't have to split up your resource definition into a separate model and controller, but you can still access your model directly without mocking a request.
 
-* **Configuration is driven by plain objects.** This means that every piece that makes up a model -- the methods for persisting data to your database, the combinations of policies used to transform and validate requests, and the schemas that define your resource properties -- are all trivial to define, reuse, abstract, and assemble.
+* **Configuration is driven by plain objects.** This means that every piece that makes up a model -- the methods for persisting data to your database, the combinations of policies used to transform and validate requests, and the schemas that define your record properties -- are all trivial to define, reuse, abstract, and assemble.
 
 * **Isolation for testability.** Each component of an Autonym app is designed to be unit testable: JSON schemas can be tested independently, policies are just simple JavaScript functions that can be imported directly, and models are simple, isolated objects that never deal with request or response objects.
 
@@ -189,9 +189,9 @@ It is extremely lightweight and written in ES6. By design, it eliminates the nee
 
 It's worth noting that the developers behind Autonym envisioned a simplistic data model, and as a result there are some definite drawbacks and limitations to the built-in behaviors of the framework.
 
-* Autonym has no intrinsic understanding of related resources. The API does not understand foreign references and will only return resource ids. This means that establishing relationships between models must be handled at the database layer or manually in the API layer. However, this eliminates some of the complexity with setting up and consuming an API with intricate routing, unintentionally costly joins, and recursive embedding.
+* Autonym has no intrinsic understanding of related records. The API does not understand foreign references and will only return record ids. This means that establishing relationships between models must be handled at the database layer or manually in the API layer. However, this eliminates some of the complexity with setting up and consuming an API with intricate routing, unintentionally costly joins, and recursive embedding.
 
-* Autonym requires all resources to have a primary key that is named id. Composite primary keys or primary keys named something different are not currently supported. This is to make REST calls trivial by using standard resource identifiers in the URL.
+* Autonym requires all records to have a primary key that is named id. Composite primary keys or primary keys named something different are not currently supported. This is to make REST calls trivial by using standard record identifiers in the URL.
 
 ## Guide
 
@@ -199,9 +199,9 @@ It's worth noting that the developers behind Autonym envisioned a simplistic dat
 
 These are high-level concepts and vocabulary for working with an Autonym application.
 
-* **Model**: A model is an instance of the `Model` class provided by Autonym. Constructed with a configuration object, a model defines its schema, policies, store methods, and so on. A model instance has static methods on it that make it trivial to import elsewhere in the application to create, read, update, and delete resources programmatically. It's also designed to plug into the Autonym middleware to be evaluated in a HTTP request.
+* **Model**: A model is an instance of the `Model` class provided by Autonym. Constructed with a configuration object, a model defines its schema, policies, store methods, and so on. A model instance has static methods on it that make it trivial to import elsewhere in the application to create, read, update, and delete records programmatically. It's also designed to plug into the Autonym middleware to be evaluated in a HTTP request.
 
-* **Schema**: A schema is part of a model's configuration. It is an object that follows the [JSON schema specification](http://json-schema.org/) for defining the properties of this type of resource.
+* **Schema**: A schema is part of a model's configuration. It is an object that follows the [JSON schema specification](http://json-schema.org/) for defining the properties of this type of record.
 
 * **Policy**: A policy is a function that is run when a request hits your API for a particular model action. Policies are like Express middleware, with the added advantage that they can be easily chained together in "and" and "or" statements. They can be used to validate the request, add computed properties, and manipulate the response before it is returned to the client. Since they are just functions, ideally they are defined in other parts of the application and imported into models for easy reuse between different models.
 
