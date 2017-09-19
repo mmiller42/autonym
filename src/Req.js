@@ -1,4 +1,5 @@
 import { cloneDeep, defaultsDeep } from 'lodash'
+import { replaceObject } from './utils/index'
 
 /**
  * A wrapper for the request object with helper methods and access to Autonym model data.
@@ -68,7 +69,11 @@ export default class Req {
       throw new ReferenceError('Cannot set request data before schema validation, as the data would be overwritten.')
     }
 
-    this._data = replace ? data : defaultsDeep(this._data, data)
+    if (replace) {
+      replaceObject(this._data, data)
+    } else {
+      defaultsDeep(this._data, data)
+    }
   }
 
   /**

@@ -8,6 +8,7 @@ export default function createErrorMiddleware() {
     }
 
     const autonymError = AutonymError.fromError(error)
+    res.autonym._isPopulated = true
     res.autonym.setStatus(autonymError.getStatus())
     res.autonym.setData(autonymError.getPayload())
 

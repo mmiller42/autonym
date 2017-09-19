@@ -39,7 +39,7 @@ function normalizeConfig(config) {
   if (!isPlainObject(config)) {
     throw new TypeError('config parameter must be a plain object.')
   }
-  if (!Array.isArray(config.models) || !isPlainObject(config.models)) {
+  if (!Array.isArray(config.models) && !isPlainObject(config.models)) {
     throw new TypeError('config.models parameter must be an array.')
   }
 

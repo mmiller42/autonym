@@ -1,5 +1,5 @@
 root = true
-[{{src,jsdoc}/**/*.{js,json},*.js,.*rc,.*.json,**/*.{md,yml,html,css}}]
+[{src/**/*.{js,json},*.js,.*rc,.*.json,**/*.{md,yml,html,css}}]
 indent_style = space
 indent_size = 2
 end_of_line = lf

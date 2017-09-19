@@ -28,8 +28,8 @@ export default function createStoreMiddleware(model) {
           }
           req._isValidated = true
         } else if (hook === 'postStore') {
-          res.setData(data)
           res._isPopulated = true
+          res.setData(data, true)
         }
 
         return evaluatePolicies(expression, req, res, meta)

@@ -19,13 +19,13 @@
     "generate-docs": "rm -rf docs && esdoc",
     "lint": "eslint src test",
     "precommit": "lint-staged",
-    "prettier": "prettier --write '{{src,jsdoc}/**/*.{js,json},*.js,.*rc,.*.json}'",
+    "prettier": "prettier --write '{src/**/*.{js,json},*.js,.*rc,.*.json}'",
     "postpublish": "create-github-release $TAG",
     "test": "npm run generate-docs",
     "watch": "npm run build -- --watch"
   },
   "lint-staged": {
-    "{{src,jsdoc}/**/*.{js,json},*.js,.*rc,.*.json}": [
+    "{src/**/*.{js,json},*.js,.*rc,.*.json}": [
       "prettier --write",
       "git add"
     ],
@@ -72,7 +72,6 @@
     "gh-pages": "^1.0.0",
     "husky": "^0.14.3",
     "lint-staged": "^4.2.1",
-    "markdown-it-container": "^2.0.0",
     "minimist": "^1.2.0",
     "prettier": "^1.7.0",
     "rimraf": "^2.6.1"

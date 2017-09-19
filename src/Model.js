@@ -1,4 +1,4 @@
-import { checkForUnrecognizedProperties, cloneInstance } from './utils/index'
+import { checkForUnrecognizedProperties, cloneInstance, filterToProperties } from './utils/index'
 import { cloneDeep, defaultsDeep, forEach, isPlainObject, kebabCase, mapValues, noop } from 'lodash'
 import Ajv from 'ajv'
 import AutonymError from './AutonymError'
@@ -79,7 +79,7 @@ export default class Model {
       ajvOptions: {
         allErrors: true,
         format: 'full',
-        removeAdditional: true,
+        removeAdditional: 'all',
         useDefaults: true,
         errorDataPath: 'property',
       },
@@ -113,7 +113,7 @@ export default class Model {
         const validatedData = cloneDeep(data)
         if (!validateAgainstSchema(validatedData)) {
           throw new AutonymError(AutonymError.NOT_ACCEPTABLE, `Schema validation for model "${name}" failed.`, {
-            errors: validateAgainstSchema.ajvErrors,
+            errors: validateAgainstSchema.errors,
           })
         }
         return validatedData
@@ -258,13 +258,15 @@ export default class Model {
    * console.log(data) // { id: '1', title: 'Hello World', body: 'This is my first post.' }
    */
   async create(data, meta = {}, hookArgs) {
-    const serializedData = await this.serialize(data)
-
-    const runner = this._callWithHooks('create', data, hookArgs)
-    await runner.next()
-
-    const result = await this.getConfig().store.create(serializedData, meta)
-    await runner.next(result)
+    const result = await this._callWithHooks(
+      'create',
+      data,
+      async validatedData => {
+        const serializedData = await this.serialize(validatedData)
+        return this.getConfig().store.create(serializedData, meta)
+      },
+      hookArgs
+    )
 
     return this.unserialize(result)
   }
@@ -281,11 +283,7 @@ export default class Model {
    * console.log(data) // [{ id: '1', title: 'Hello World', body: 'This is my first post.' }]
    */
   async find(query, meta = {}, hookArgs) {
-    const runner = this._callWithHooks(null, hookArgs)
-    await runner.next()
-
-    const results = await this.getConfig().store.find('find', query, meta)
-    await runner.next(results)
+    const results = await this._callWithHooks('find', null, () => this.getConfig().store.find(query, meta), hookArgs)
 
     return Promise.all(results.map(async result => this.unserialize(result)))
   }
@@ -302,11 +300,7 @@ export default class Model {
    * console.log(data) // { id: '1', title: 'Hello World', body: 'This is my first post.' }
    */
   async findOne(id, meta = {}, hookArgs) {
-    const runner = this._callWithHooks('findOne', null, hookArgs)
-    await runner.next()
-
-    const result = await this.getConfig().store.findOne(id, meta)
-    await runner.next(result)
+    const result = await this._callWithHooks('findOne', null, () => this.getConfig().store.findOne(id, meta), hookArgs)
 
     return this.unserialize(result)
   }
@@ -328,16 +322,19 @@ export default class Model {
   async findOneAndUpdate(id, data, completeData = null, meta = {}, hookArgs) {
     const fetchedCompleteData = completeData || (await this.getConfig().store.findOne(id))
 
-    const [serializedData, serializedCompleteData] = await Promise.all([
-      this.serialize(data),
-      this.serialize(fetchedCompleteData),
-    ])
+    const result = await this._callWithHooks(
+      'findOneAndUpdate',
+      fetchedCompleteData,
+      async validatedData => {
+        const [serializedData, serializedCompleteData] = await Promise.all([
+          this.serialize(filterToProperties(validatedData, data)),
+          this.serialize(validatedData),
+        ])
 
-    const runner = this._callWithHooks('findOneAndUpdate', fetchedCompleteData, hookArgs)
-    await runner.next()
-
-    const result = await this.getConfig().store.findOneAndUpdate(id, serializedData, serializedCompleteData, meta)
-    await runner.next(result)
+        return this.getConfig().store.findOneAndUpdate(id, serializedData, serializedCompleteData, meta)
+      },
+      hookArgs
+    )
 
     return this.unserialize(result)
   }
@@ -354,12 +351,15 @@ export default class Model {
    * console.log(data) // { id: '1' }
    */
   async findOneAndDelete(id, meta = {}, hookArgs) {
-    const runner = this._callWithHooks('findOneAndDelete', null, hookArgs)
-    await runner.next()
-
-    await this.getConfig().store.findOneAndDelete(id, meta)
-    const result = { id }
-    await runner.next(result)
+    const result = await this._callWithHooks(
+      'findOneAndDelete',
+      null,
+      async () => {
+        await this.getConfig().store.findOneAndDelete(id, meta)
+        return { id }
+      },
+      hookArgs
+    )
 
     return this.unserialize(result)
   }
@@ -421,7 +421,7 @@ export default class Model {
     return cloneInstance(this, { _hooks: hooks })
   }
 
-  async *_callWithHooks(method, data, hookArgs) {
+  async _callWithHooks(method, data, fn, hookArgs = []) {
     try {
       await this.init()
       await this._callHook(method, 'preSchema', hookArgs)
@@ -432,9 +432,10 @@ export default class Model {
       }
       await this._callHook(method, 'postSchema', [...hookArgs, validatedData])
 
-      const result = yield
+      const result = await fn(validatedData)
 
       await this._callHook(method, 'postStore', [...hookArgs, result])
+      return result
     } catch (err) {
       throw AutonymError.fromError(err)
     }
@@ -442,7 +443,7 @@ export default class Model {
 
   async _callHook(method, hook, hookArgs) {
     if (this._hooks) {
-      await this._hooks[method][hook](...hookArgs)
+      await this._hooks[hook][method](...hookArgs)
     }
   }
 }

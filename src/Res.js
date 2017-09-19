@@ -77,12 +77,12 @@ export default class Res {
       throw new ReferenceError('Cannot set response data before store method has been called.')
     }
 
-    this._data = replace ? data : defaultsDeep(this._data, data)
+    this._data = replace || Array.isArray(data) ? data : defaultsDeep(this._data, data)
   }
 
   /**
    * Gets the currently set status code.
-   * @returns {number} The status code.
+   * @returns {number|null} The status code.
    */
   getStatus() {
     return this._status
