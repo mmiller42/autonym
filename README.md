@@ -45,8 +45,7 @@ const Person = new Model({
 
 const mountAutonym = async () => {
   // Mount Autonym middleware
-  const modelMiddleware = await createModelMiddleware({ models: [Person] })
-  app.use(modelMiddleware)
+  app.use(await createModelMiddleware({ models: [Person] }))
   app.use(createResponderMiddleware())
   console.log('Autonym is ready')
 }
