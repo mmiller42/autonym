@@ -14,4 +14,5 @@ module.exports = {
     const ext = path.extname(filename)
     return lines && lines <= MAX_LINES_TO_SHOW && (!ext || EXTS_TO_SHOW.includes(ext))
   },
+  overwrite: true,
 }
