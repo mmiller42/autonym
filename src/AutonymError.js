@@ -19,13 +19,6 @@ export default class AutonymError {
   static FORBIDDEN = 'FORBIDDEN'
 
   /**
-   * Code indicating the request was improper, i.e. failed schema validation.
-   * @constant
-   * @type {string}
-   */
-  static NOT_ACCEPTABLE = 'NOT_ACCEPTABLE'
-
-  /**
    * Code indicating the requested store method is not available for this model.
    * @constant
    * @type {string}
@@ -47,6 +40,13 @@ export default class AutonymError {
   static UNAUTHORIZED = 'UNAUTHORIZED'
 
   /**
+   * Code indicating the request was improper, i.e. failed schema validation.
+   * @constant
+   * @type {string}
+   */
+  static UNPROCESSABLE_ENTITY = 'UNPROCESSABLE_ENTITY'
+
+  /**
    * Default. Code indicating an unhandled error occurred while the server was processing the request.
    * @constant
    * @type {string}
@@ -61,10 +61,10 @@ export default class AutonymError {
   static CLIENT_ERRORS = [
     AutonymError.BAD_REQUEST,
     AutonymError.FORBIDDEN,
-    AutonymError.NOT_ACCEPTABLE,
     AutonymError.METHOD_NOT_ALLOWED,
     AutonymError.NOT_FOUND,
     AutonymError.UNAUTHORIZED,
+    AutonymError.UNPROCESSABLE_ENTITY,
   ]
 
   /**

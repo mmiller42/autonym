@@ -1,4 +1,4 @@
-import { cloneDeep, defaultsDeep } from 'lodash'
+import { cloneDeep, defaultsDeep, isPlainObject } from 'lodash'
 import assignDeep from 'assign-deep'
 import { deleteUndefineds } from './utils'
 
@@ -33,7 +33,7 @@ export default class Req {
   }
 
   /**
-   * Gets the data from the request body.
+   * Gets the request payload.
    * @returns {Record} The data.
    * @throws {ReferenceError} If the request does not have a body.
    */
@@ -60,6 +60,9 @@ export default class Req {
    * console.log(req.getData()) // { name: 'Test' }
    */
   setData(data, replace = false) {
+    if (!isPlainObject(data)) {
+      throw new TypeError('The data must be a plain object.')
+    }
     if (!this.hasBody()) {
       throw new ReferenceError('Cannot set request data on a request without a body.')
     }
@@ -71,6 +74,18 @@ export default class Req {
     }
 
     deleteUndefineds(this._data)
+  }
+
+  /**
+   * Gets the data that was originally on the request body.
+   * @returns {Record} The data.
+   * @throws {ReferenceError} If the request does not have a body.
+   */
+  getRequestData() {
+    if (!this.hasBody()) {
+      throw new ReferenceError('Cannot get request data from a request without a body.')
+    }
+    return this.getRaw().body
   }
 
   /**

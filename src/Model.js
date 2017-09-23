@@ -36,6 +36,19 @@ export default class Model {
     if (config.schema && config.schema.type !== 'object') {
       throw new TypeError('config.schema.type parameter must be object.')
     }
+    if (config.optionalUpdateProperties !== undefined && !Array.isArray(config.optionalUpdateProperties)) {
+      throw new TypeError('config.optionalUpdateProperties must be an array or undefined.')
+    }
+    if (config.optionalUpdateProperties) {
+      config.optionalUpdateProperties.forEach((optionalUpdateProperty, i) => {
+        if (
+          typeof optionalUpdateProperty !== 'string' &&
+          (!Array.isArray(optionalUpdateProperty) || !optionalUpdateProperty.every(p => typeof p === 'string'))
+        ) {
+          throw new TypeError(`config.optionalUpdateProperties[${i}] must be a string or array of strings`)
+        }
+      })
+    }
     if (config.ajvOptions !== undefined && !isPlainObject(config.ajvOptions)) {
       throw new TypeError('config.ajvOptions parameter must be a plain object or undefined.')
     }
@@ -69,6 +82,7 @@ export default class Model {
       'name',
       'init',
       'schema',
+      'optionalUpdateProperties',
       'ajvOptions',
       'policies',
       'store',
@@ -77,7 +91,7 @@ export default class Model {
     checkForUnrecognizedProperties('config.policies', config.policies, STORE_METHODS)
     forEach(config.policies, (hooks, method) => {
       if (typeof hooks === 'boolean') {
-        config.policies[method] = { preSchema: hooks }
+        config.policies[method] = { preSchema: hooks, preStore: hooks }
       } else if (isPlainObject(hooks)) {
         checkForUnrecognizedProperties(`config.policies.${method}`, hooks, POLICY_LIFECYCLE_HOOKS[method])
       } else {
@@ -88,6 +102,7 @@ export default class Model {
     const normalizedConfig = defaultsDeep({}, config, {
       init: noop,
       schema: null,
+      optionalUpdateProperties: [],
       ajvOptions: {
         allErrors: true,
         format: 'full',
@@ -125,11 +140,33 @@ export default class Model {
 
     if (normalizedConfig.schema) {
       const validateAgainstSchema = new Ajv(normalizedConfig.ajvOptions).compile(normalizedConfig.schema)
-      normalizedConfig.validateAgainstSchema = async data => {
+
+      let validateUpdateAgainstSchema = validateAgainstSchema
+      if (normalizedConfig.optionalUpdateProperties.length > 0) {
+        const filteredSchema = cloneDeep(normalizedConfig.schema)
+        normalizedConfig.optionalUpdateProperties.forEach(property => {
+          const dataPath = Array.isArray(property) ? property : [property]
+          const propertyToRemove = dataPath[dataPath.length - 1]
+
+          let object = filteredSchema
+          dataPath.slice(0, -1).forEach(key => {
+            if (!object.properties || !object.properties[key]) {
+              throw new TypeError(`Cannot remove property ${dataPath.join('.')} as it does not exist on the schema.`)
+            }
+            object = object.properties[key]
+          })
+
+          object.required = object.required.filter(prop => prop !== propertyToRemove)
+        })
+        validateUpdateAgainstSchema = new Ajv(normalizedConfig.ajvOptions).compile(filteredSchema)
+      }
+
+      normalizedConfig.validateAgainstSchema = async (data, isUpdate = false) => {
         const validatedData = cloneDeep(data)
-        if (!validateAgainstSchema(validatedData)) {
-          throw new AutonymError(AutonymError.NOT_ACCEPTABLE, `Schema validation for model "${name}" failed.`, {
-            errors: validateAgainstSchema.errors,
+        const validateFn = isUpdate ? validateUpdateAgainstSchema : validateAgainstSchema
+        if (!validateFn(validatedData)) {
+          throw new AutonymError(AutonymError.UNPROCESSABLE_ENTITY, `Schema validation for model "${name}" failed.`, {
+            errors: validateFn.errors,
           })
         }
         return validatedData
@@ -155,6 +192,10 @@ export default class Model {
    * @param {function(): *|Promise.<*, Error>} [config.init] A function to call when the model is first used.
    * @param {Schema|null} config.schema A JSON schema to validate data against before passing it to the store
    * methods, or explicitly `null` to disable schema validation.
+   * @param {Array<string|string[]>} [config.optionalUpdateProperties] A list of properties that are normally required
+   * in the schema but may be optional in a findOneAndUpdate request. This is rarely needed as request data is merged
+   * with the existing record before schema validation occurs, but this can be helpful when properties are converted to
+   * computed properties when saved (e.g. user records that have a passwordHash property and whose password is deleted).
    * @param {AjvOptions} [config.ajvOptions] Additional options to pass to the Ajv instance.
    * @param {ModelPolicies} [config.policies] Configuration policies.
    * @param {Store} config.store Configuration store.
@@ -459,6 +500,8 @@ export default class Model {
   /**
    * Validates the data against the schema.
    * @param {Record} data The data to validate. This must be a complete record.
+   * @param {string} [method] One of 'create', 'find', 'findOne', 'findOneAndUpdate', or 'findOneAndDelete', which may
+   * determine different schema restrictions based on the configuration.
    * @returns {Promise.<Record, AutonymError>} Resolves with the validated data, which has unrecognized properties
    * filtered out and default values added.
    * @example
@@ -466,8 +509,8 @@ export default class Model {
    *
    * console.log(validatedData) // { title: 'Hello World' }
    */
-  async validateAgainstSchema(data) {
-    return this.getConfig().validateAgainstSchema(data)
+  async validateAgainstSchema(data, method = null) {
+    return this.getConfig().validateAgainstSchema(data, method === 'findOneAndUpdate')
   }
 
   /**
@@ -486,7 +529,7 @@ export default class Model {
       let transformedData = data
       if (data) {
         transformedData = await this._callHook(method, 'preSchema', hookArgs, transformedData)
-        transformedData = await this.validateAgainstSchema(transformedData)
+        transformedData = await this.validateAgainstSchema(transformedData, method)
         transformedData = await this._callHook(method, 'postSchema', hookArgs, transformedData)
       }
 

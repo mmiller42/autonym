@@ -1,14 +1,15 @@
 {
-  "presets": [
-    [
-      "babel-preset-env",
-      {
-        "targets": {
-          "node": "4.3.0"
-        }
-      }
-    ]
-  ],
+  "env": {
+    "development": {
+      "presets": [["babel-preset-env", { "targets": { "node": "current" } }]]
+    },
+    "test": {
+      "presets": [["babel-preset-env", { "targets": { "node": "4.3.0" } }]]
+    },
+    "production": {
+      "presets": [["babel-preset-env", { "targets": { "node": "4.3.0" } }]]
+    }
+  },
   "plugins": [
     "babel-plugin-syntax-async-generators",
     "babel-plugin-add-module-exports",

@@ -37,7 +37,9 @@ export default function createStoreMiddleware(model) {
 
         await evaluatePolicies(expression, req, res, meta)
 
-        if (data && (hook === 'preSchema' || hook === 'postSchema' || hook === 'preStore')) {
+        if (data && hook === 'preSchema') {
+          return req.getCompleteData()
+        } else if (data && (hook === 'postSchema' || hook === 'preStore')) {
           return req.getData()
         } else if (data && hook === 'postStore') {
           return res.getData()

@@ -1,6 +1,7 @@
 import HTTP from 'http-status-codes'
 import assignDeep from 'assign-deep'
 import { deleteUndefineds } from './utils'
+import { isPlainObject } from 'lodash'
 
 /**
  * A wrapper for the response object with helper methods and access to Autonym model data.
@@ -78,8 +79,25 @@ export default class Res {
       throw new ReferenceError('Cannot set response data before store method has been called.')
     }
 
-    this._data = replace || Array.isArray(data) ? data : assignDeep(this._data, data)
-    deleteUndefineds(this._data)
+    if (replace) {
+      this._data = data
+      deleteUndefineds(this._data)
+    } else if (Array.isArray(this._data)) {
+      if (!Array.isArray(data)) {
+        throw new TypeError('The data must be an array.')
+      }
+
+      this._data.forEach((record, i) => {
+        assignDeep(record, data[i] || {})
+        deleteUndefineds(record)
+      })
+    } else {
+      if (!isPlainObject(data)) {
+        throw new TypeError('The data must be a plain object.')
+      }
+      this._data = assignDeep(this._data, data)
+      deleteUndefineds(this._data)
+    }
   }
 
   /**
@@ -96,6 +114,9 @@ export default class Res {
    * @returns {void}
    */
   setStatus(status) {
+    if (typeof status !== 'number') {
+      throw new TypeError('The status must be a number.')
+    }
     this._status = status
   }
 
@@ -123,6 +144,12 @@ export default class Res {
    * @returns {void}
    */
   setHeader(header, value) {
+    if (typeof header !== 'string') {
+      throw new TypeError('The header must be a string')
+    }
+    if (typeof value !== 'string') {
+      throw new TypeError('The value must be a string')
+    }
     return this.getRaw().set(header, value)
   }
 
