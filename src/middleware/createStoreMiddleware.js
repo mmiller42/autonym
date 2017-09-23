@@ -22,17 +22,28 @@ export default function createStoreMiddleware(model) {
   function createPolicyHooks() {
     return mapValues(model.getPolicies(), hooks =>
       mapValues(hooks, (expression, hook) => async (req, res, meta, data) => {
+        if (data && (hook === 'postSchema' || hook === 'preStore')) {
+          req.setData(data, true)
+        }
+
         if (hook === 'postSchema') {
-          if (data) {
-            req.setData(data, true)
-          }
           req._isValidated = true
-        } else if (hook === 'postStore') {
+        }
+
+        if (hook === 'postStore') {
           res._isPopulated = true
           res.setData(data, true)
         }
 
-        return evaluatePolicies(expression, req, res, meta)
+        await evaluatePolicies(expression, req, res, meta)
+
+        if (data && (hook === 'preSchema' || hook === 'postSchema' || hook === 'preStore')) {
+          return req.getData()
+        } else if (data && hook === 'postStore') {
+          return res.getData()
+        } else {
+          return null
+        }
       })
     )
   }
@@ -68,7 +79,6 @@ export default function createStoreMiddleware(model) {
     if (!result) {
       throw lastError || new AutonymError(AutonymError.FORBIDDEN, 'This action may not be performed.')
     }
-    return true
   }
 
   async function callStoreMethod(method, req, res, next) {

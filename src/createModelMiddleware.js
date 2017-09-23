@@ -1,7 +1,7 @@
 import { createErrorMiddleware, createStoreMiddleware } from './middleware'
 import { isPlainObject, values } from 'lodash'
 import Model from './Model'
-import { checkForUnrecognizedProperties } from './utils/index'
+import { checkForUnrecognizedProperties } from './utils'
 import { Router as createRouter } from 'express'
 
 /**

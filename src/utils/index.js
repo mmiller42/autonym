@@ -1,4 +1,4 @@
-import { difference, isPlainObject, reduce } from 'lodash'
+import { difference, forEach, isPlainObject, reduce } from 'lodash'
 
 export function checkForUnrecognizedProperties(parameterName, object, expectedProperties) {
   if (!object) {
@@ -15,11 +15,14 @@ export function cloneInstance(instance, newProps) {
   return Object.assign(Object.create(Object.getPrototypeOf(instance)), instance, newProps)
 }
 
-export function replaceObject(destination, source) {
-  Object.keys(destination, property => {
-    delete destination[property]
+export function deleteUndefineds(object) {
+  forEach(object, (value, key) => {
+    if (typeof value === 'object' && value !== null) {
+      deleteUndefineds(value)
+    } else if (value === undefined) {
+      delete object[key]
+    }
   })
-  return Object.assign(destination, source)
 }
 
 export function filterToProperties(fullObject, partialObject) {

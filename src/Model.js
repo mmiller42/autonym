@@ -1,4 +1,4 @@
-import { checkForUnrecognizedProperties, cloneInstance, filterToProperties } from './utils/index'
+import { checkForUnrecognizedProperties, cloneInstance, filterToProperties } from './utils'
 import { cloneDeep, defaultsDeep, forEach, isPlainObject, kebabCase, mapValues, noop, reduce } from 'lodash'
 import Ajv from 'ajv'
 import AutonymError from './AutonymError'
@@ -280,17 +280,16 @@ export default class Model {
       throw new TypeError('meta parameter must be a plain object.')
     }
 
-    const result = await this._callWithHooks(
+    return this._callWithHooks(
       'create',
       data,
-      async validatedData => {
-        const serializedData = await this.serialize(validatedData)
-        return this.getConfig().store.create(serializedData, meta)
+      async transformedData => {
+        const serializedData = await this.serialize(transformedData)
+        const result = await this.getConfig().store.create(serializedData, meta)
+        return this.unserialize(result)
       },
       hookArgs
     )
-
-    return this.unserialize(result)
   }
 
   /**
@@ -309,9 +308,15 @@ export default class Model {
       throw new TypeError('meta parameter must be a plain object.')
     }
 
-    const results = await this._callWithHooks('find', null, () => this.getConfig().store.find(query, meta), hookArgs)
-
-    return Promise.all(results.map(async result => this.unserialize(result)))
+    return this._callWithHooks(
+      'find',
+      null,
+      async () => {
+        const results = await this.getConfig().store.find(query, meta)
+        return Promise.all(results.map(async result => this.unserialize(result)))
+      },
+      hookArgs
+    )
   }
 
   /**
@@ -333,9 +338,15 @@ export default class Model {
       throw new TypeError('meta parameter must be a plain object.')
     }
 
-    const result = await this._callWithHooks('findOne', null, () => this.getConfig().store.findOne(id, meta), hookArgs)
-
-    return this.unserialize(result)
+    return this._callWithHooks(
+      'findOne',
+      null,
+      async () => {
+        const result = await this.getConfig().store.findOne(id, meta)
+        return this.unserialize(result)
+      },
+      hookArgs
+    )
   }
 
   /**
@@ -368,21 +379,20 @@ export default class Model {
 
     const fetchedCompleteData = completeData || (await this.getConfig().store.findOne(id))
 
-    const result = await this._callWithHooks(
+    return this._callWithHooks(
       'findOneAndUpdate',
       fetchedCompleteData,
-      async validatedData => {
+      async transformedData => {
         const [serializedData, serializedCompleteData] = await Promise.all([
-          this.serialize(filterToProperties(validatedData, data)),
-          this.serialize(validatedData),
+          this.serialize(filterToProperties(transformedData, data)),
+          this.serialize(transformedData),
         ])
 
-        return this.getConfig().store.findOneAndUpdate(id, serializedData, serializedCompleteData, meta)
+        const result = await this.getConfig().store.findOneAndUpdate(id, serializedData, serializedCompleteData, meta)
+        return this.unserialize(result)
       },
       hookArgs
     )
-
-    return this.unserialize(result)
   }
 
   /**
@@ -404,17 +414,16 @@ export default class Model {
       throw new TypeError('meta parameter must be a plain object.')
     }
 
-    const result = await this._callWithHooks(
+    return this._callWithHooks(
       'findOneAndDelete',
       null,
       async () => {
         await this.getConfig().store.findOneAndDelete(id, meta)
-        return { id }
+        const result = { id }
+        return this.unserialize(result)
       },
       hookArgs
     )
-
-    return this.unserialize(result)
   }
 
   /**
@@ -458,11 +467,7 @@ export default class Model {
    * console.log(validatedData) // { title: 'Hello World' }
    */
   async validateAgainstSchema(data) {
-    try {
-      return this.getConfig().validateAgainstSchema(data)
-    } catch (err) {
-      throw AutonymError.fromError(err)
-    }
+    return this.getConfig().validateAgainstSchema(data)
   }
 
   /**
@@ -478,30 +483,28 @@ export default class Model {
     try {
       await this.init()
 
-      let validatedData = null
+      let transformedData = data
       if (data) {
-        await this._callHook(method, 'preSchema', hookArgs)
-
-        validatedData = await this.validateAgainstSchema(data)
-
-        await this._callHook(method, 'postSchema', [...hookArgs, validatedData])
+        transformedData = await this._callHook(method, 'preSchema', hookArgs, transformedData)
+        transformedData = await this.validateAgainstSchema(transformedData)
+        transformedData = await this._callHook(method, 'postSchema', hookArgs, transformedData)
       }
 
-      await this._callHook(method, 'preStore', hookArgs)
+      transformedData = await this._callHook(method, 'preStore', hookArgs, transformedData)
+      transformedData = await fn(transformedData)
+      transformedData = await this._callHook(method, 'postStore', hookArgs, transformedData)
 
-      const result = await fn(validatedData)
-
-      await this._callHook(method, 'postStore', [...hookArgs, result])
-
-      return result
+      return transformedData
     } catch (err) {
       throw AutonymError.fromError(err)
     }
   }
 
-  async _callHook(method, hook, hookArgs) {
+  async _callHook(method, hook, hookArgs, data) {
     if (this._hooks) {
-      await this._hooks[method][hook](...hookArgs)
+      return this._hooks[method][hook](...hookArgs, data)
+    } else {
+      return data
     }
   }
 }

@@ -1,5 +1,6 @@
 import HTTP from 'http-status-codes'
-import { defaultsDeep } from 'lodash'
+import assignDeep from 'assign-deep'
+import { deleteUndefineds } from './utils'
 
 /**
  * A wrapper for the response object with helper methods and access to Autonym model data.
@@ -77,7 +78,8 @@ export default class Res {
       throw new ReferenceError('Cannot set response data before store method has been called.')
     }
 
-    this._data = replace || Array.isArray(data) ? data : defaultsDeep(this._data, data)
+    this._data = replace || Array.isArray(data) ? data : assignDeep(this._data, data)
+    deleteUndefineds(this._data)
   }
 
   /**

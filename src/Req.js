@@ -1,5 +1,6 @@
 import { cloneDeep, defaultsDeep } from 'lodash'
-import { replaceObject } from './utils/index'
+import assignDeep from 'assign-deep'
+import { deleteUndefineds } from './utils'
 
 /**
  * A wrapper for the request object with helper methods and access to Autonym model data.
@@ -49,9 +50,6 @@ export default class Req {
    * @param {boolean} [replace] If true, replaces the data on the response instead of merging it.
    * @returns {void}
    * @throws {ReferenceError} If the request does not have a body.
-   * @throws {ReferenceError} If the data is being modified before the schema validation step. It is okay to
-   * completely replace the data before validation though. This is to prevent the mistake of using `setData` to add
-   * the value of a newly computed property, only to have it be discarded at the validation step.
    * @example
    * console.log(req.getData()) // { title: 'Hello World' }
    * req.setData({ name: 'Test' })
@@ -65,15 +63,14 @@ export default class Req {
     if (!this.hasBody()) {
       throw new ReferenceError('Cannot set request data on a request without a body.')
     }
-    if (!this.isValidated() && !replace) {
-      throw new ReferenceError('Cannot set request data before schema validation, as the data would be overwritten.')
-    }
 
     if (replace) {
-      replaceObject(this._data, data)
+      this._data = data
     } else {
-      defaultsDeep(this._data, data)
+      assignDeep(this._data, data)
     }
+
+    deleteUndefineds(this._data)
   }
 
   /**
