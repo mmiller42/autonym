@@ -9,7 +9,7 @@ const publish = promisify(ghPages.publish)
 const exec = (() => {
   return function exec(command, args) {
     return new Promise((resolve, reject) => {
-      const childProcess = spawn(command, args, { cwd: pwd, stdio: 'inherit' })
+      const childProcess = spawn(command, args, { stdio: 'inherit' })
       childProcess.on('error', err => reject(err))
       childProcess.on('exit', code => {
         if (code === 0) {
