@@ -19,14 +19,14 @@
     "generate-docs": "rm -rf docs && esdoc",
     "lint": "eslint src test",
     "precommit": "lint-staged",
-    "prettier": "prettier --write '{src/**/*.{js,json},*.js,.*rc,.*.json}'",
-    "postinstall": "node devInstall.js",
-    "postpublish": "create-github-release $TAG",
+    "prettier": "prettier --write '{{src,buildTools}/**/*.{js,json},*.js,.*rc,.*.json}'",
+    "postinstall": "node buildTools/devInstall.js",
+    "postpublish": "create-github-release --config=buildTools/github-release.config.js $TAG && node buildTools/publishDocs.js",
     "test": "npm run generate-docs",
     "watch": "npm run build -- --watch"
   },
   "lint-staged": {
-    "{src/**/*.{js,json},*.js,.*rc,.*.json}": [
+    "{{src,buildTools}/**/*.{js,json},*.js,.*rc,.*.json}": [
       "prettier --write",
       "git add"
     ],
