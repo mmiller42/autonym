@@ -35,7 +35,7 @@ async function run() {
     throw new Error('No tag specified')
   }
 
-  //await exec('git', ['checkout', tag])
+  await exec('git', ['checkout', tag])
 
   const match = tag.match(/v([0-9]+\.[0-9]+\.[0-9]+)$/)
   if (!match) {
@@ -67,6 +67,10 @@ async function run() {
   await publish('tmp', {
     add: true,
     message: `Publishing docs for v${version}`,
+    user: {
+      name: 'CircleCI',
+      email: 'me@mmiller.me',
+    },
   })
 
   await rmdir('tmp')
