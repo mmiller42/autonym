@@ -21,7 +21,7 @@
     "precommit": "lint-staged",
     "prettier": "prettier --write '{{src,buildTools}/**/*.{js,json},*.js,.*rc,.*.json}'",
     "postinstall": "node buildTools/devInstall.js",
-    "postpublish": "create-github-release --config=buildTools/github-release.config.js $TAG && node buildTools/publishDocs.js",
+    "postpublish": "create-github-release --config=buildTools/github-release.config.js $TAG && node buildTools/publishDocs.js $TAG",
     "test": "npm run generate-docs",
     "watch": "npm run build -- --watch"
   },
