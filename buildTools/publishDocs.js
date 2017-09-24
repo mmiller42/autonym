@@ -1,22 +1,26 @@
-const path = require('path')
-const childProcess = require('child_process')
-const promisify = require('es6-promisify')
 const ghPages = require('gh-pages')
 const parseArgs = require('minimist')
+const promisify = require('es6-promisify')
+const { spawn } = require('child_process')
 
 const INVALID_TAG = new Error('Tag is not a version tag')
 
 const publish = promisify(ghPages.publish)
-const _exec = promisify(childProcess.exec, { multiArgs: true })
-async function exec(command, options) {
-  const [stdout, stderr] = await _exec(command, options)
-  if (stdout) {
-    console.log(stdout)
+const exec = (() => {
+  return function exec(command, args) {
+    return new Promise((resolve, reject) => {
+      const childProcess = spawn(command, args, { cwd: pwd, stdio: 'inherit' })
+      childProcess.on('error', err => reject(err))
+      childProcess.on('exit', code => {
+        if (code === 0) {
+          resolve()
+        } else {
+          reject(new Error(`Command ${command} ${args.join(' ')} returned a non-zero status code.`))
+        }
+      })
+    })
   }
-  if (stderr) {
-    console.error(stderr)
-  }
-}
+})()
 
 async function run() {
   const [, , ...argv] = process.argv
