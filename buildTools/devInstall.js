@@ -1,4 +1,4 @@
-if (process.env.NODE_ENV !== 'development') {
+if (process.env.NODE_ENV !== 'development' || process.env.INIT_CWD === process.env.PWD) {
   process.exit(0)
 }
 
@@ -38,11 +38,15 @@ function rewriteBabelrc() {
     .then(json => JSON.parse(json))
     .then(babelrc =>
       Object.assign({}, babelrc, {
-        presets: babelrc.presets.map(preset => {
-          if (Array.isArray(preset) && preset[0] === 'babel-preset-env') {
-            return ['babel-preset-env', Object.assign({}, preset[1], { targets: { node: 'current' } })]
-          }
-          return preset
+        env: Object.assign({}, babelrc.env, {
+          development: Object.assign({}, babelrc.env.development, {
+            presets: babelrc.env.development.presets.map(preset => {
+              if (Array.isArray(preset) && preset[0] === 'babel-preset-env') {
+                return ['babel-preset-env', Object.assign({}, preset[1], { targets: { node: 'current' } })]
+              }
+              return preset
+            }),
+          }),
         }),
       })
     )
