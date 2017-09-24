@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script>
+      var version = "1.0.0"
+      var port = location.port ? ':' + location.port : ''
+      var pathname = location.pathname.split('index.html')[0]
+      location.href = location.protocol + '//' + location.hostname + port + pathname + version
+    </script>
+  </head>
+</html>
