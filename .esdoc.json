@@ -1,0 +1,35 @@
+{
+  "source": "./src",
+  "destination": "./docs",
+  "plugins": [
+    { "name": "esdoc-ecmascript-proposal-plugin", "option": { "all": true } },
+    { "name": "esdoc-external-nodejs-plugin" },
+    { "name": "esdoc-external-nodejs-plugin", "option": { "enable": true } },
+    {
+      "name": "esdoc-importpath-plugin",
+      "option": {
+        "stripPackageName": false,
+        "replaces": [{ "from": "^src/(.*)\\.js$", "to": "lib/$1" }]
+      }
+    },
+    {
+      "name": "esdoc-standard-plugin",
+      "option": {
+        "lint": { "enable": true },
+        "coverage": { "enable": false },
+        "accessor": { "access": ["public"], "autoPrivate": true },
+        "undocumentIdentifier": { "enable": false },
+        "unexportedIdentifier": { "enable": false },
+        "brand": {
+          "logo": null,
+          "title": "Autonym",
+          "description": "A KISS JSON REST API framework that can be mounted to your Express application.",
+          "repository": "https://github.com/mmiller42/autonym",
+          "site": "https://autonym.io/",
+          "author": "https://mmiller.me/",
+          "image": null
+        }
+      }
+    }
+  ]
+}
