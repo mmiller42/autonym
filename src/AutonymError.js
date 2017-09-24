@@ -140,7 +140,7 @@ export default class AutonymError {
    * @returns {number} The HTTP status code.
    */
   getStatus() {
-    return HTTP[this.getCode() || AutonymError.INTERNAL_SERVER_ERROR]
+    return HTTP[this.getCode() || AutonymError.INTERNAL_SERVER_ERROR] || HTTP.INTERNAL_SERVER_ERROR
   }
 
   /**

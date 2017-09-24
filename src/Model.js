@@ -477,7 +477,11 @@ export default class Model {
    * console.log(data) // { author_id: '42' }
    */
   async serialize(data) {
-    return this.getConfig().store.serialize(data)
+    try {
+      return this.getConfig().store.serialize(data)
+    } catch (err) {
+      throw AutonymError.fromError(err)
+    }
   }
 
   /**
@@ -491,7 +495,11 @@ export default class Model {
    */
   async unserialize(data) {
     try {
-      return this.getConfig().store.unserialize(data)
+      const unserializedData = await this.getConfig().store.unserialize(data)
+      if (unserializedData && unserializedData.id != null) {
+        unserializedData.id = String(unserializedData.id)
+      }
+      return unserializedData
     } catch (err) {
       throw AutonymError.fromError(err)
     }
