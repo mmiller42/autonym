@@ -1,9 +1,9 @@
+import { cloneDeep, mapValues } from 'lodash'
 import AsyncBooleanExpressionEvaluator from 'async-boolean-expression-evaluator'
 import AutonymError from '../AutonymError'
 import Req from '../Req'
 import Res from '../Res'
 import { Router as createRouter } from 'express'
-import { mapValues } from 'lodash'
 
 export default function createStoreMiddleware(model) {
   const modelWithHooks = model.withHooks(createPolicyHooks())
@@ -84,7 +84,7 @@ export default function createStoreMiddleware(model) {
   }
 
   async function callStoreMethod(method, req, res, next) {
-    const meta = model.getInitialMeta()
+    const meta = cloneDeep(model.getInitialMeta())
     const autonymReq = new Req(req, model, meta)
     const autonymRes = new Res(res, model, meta)
 
