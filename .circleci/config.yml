@@ -48,3 +48,12 @@ jobs:
             else
               echo "No tag pushed, skipping deploy"
             fi
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build
+          filters:
+            branches:
+              ignore: gh-pages
