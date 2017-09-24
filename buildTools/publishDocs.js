@@ -29,7 +29,7 @@ async function run() {
     throw new Error('No tag specified')
   }
 
-  await exec(`git checkout ${tag}`)
+  await exec('git', ['checkout', tag])
 
   const match = tag.match(/v([0-9]+\.[0-9]+\.[0-9]+)$/)
   if (!match) {
@@ -37,7 +37,7 @@ async function run() {
   }
   const [, version] = match
 
-  await exec('npm run generate-docs')
+  await exec('npm', ['run', 'generate-docs'])
 
   await publish('docs', {
     dest: version,
