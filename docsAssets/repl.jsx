@@ -339,6 +339,8 @@ function showRepl() {
     return
   }
 
+  document.title = 'REPL | Autonym'
+
   document.querySelectorAll('body > nav, body > .content, body > footer').forEach(element => element.parentNode.removeChild(element))
   const replContainer = document.createElement('div')
   replContainer.setAttribute('class', 'repl')
