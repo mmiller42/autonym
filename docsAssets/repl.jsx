@@ -151,16 +151,14 @@ class Curler extends React.PureComponent {
     const { endpointUrl } = this.props
     const { headers, route, method, body } = this.state
 
-    const requestHeaders = new Headers()
-    headers.forEach(header => {
-      if (header.name !== '') {
-        requestHeaders.append(header.name, header.value)
-      }
-    })
-
     fetch(`${endpointUrl}/${route}`, {
       method: method,
-      headers: requestHeaders,
+      headers: headers.reduce((map, header) => {
+        if (header.name !== '') {
+          map[header.name] = header.value
+        }
+        return map
+      }, {}),
       body: ['POST', 'PATCH'].indexOf(method) > -1 ? body : undefined,
     })
       .then(response =>
