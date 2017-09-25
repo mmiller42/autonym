@@ -65,6 +65,7 @@
     "esdoc-ecmascript-proposal-plugin": "^1.0.0",
     "esdoc-external-nodejs-plugin": "^1.0.0",
     "esdoc-importpath-plugin": "^1.0.1",
+    "esdoc-inject-assets-plugin": "^1.0.0",
     "esdoc-standard-plugin": "^1.0.0",
     "eslint": "^4.7.1",
     "eslint-config-prettier": "^2.5.0",

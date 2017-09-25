@@ -30,6 +30,27 @@
           "image": null
         }
       }
+    },
+    {
+      "name": "esdoc-inject-assets-plugin",
+      "option": {
+        "assets": [
+          "https://unpkg.com/codemirror@5/lib/codemirror.css",
+          "docsAssets/styles.css",
+          { "path": "https://unpkg.com/es5-shim@4", "type": "script" },
+          { "path": "https://unpkg.com/promise-polyfill@6", "type": "script" },
+          { "path": "https://unpkg.com/whatwg-fetch@2", "type": "script" },
+          { "path": "https://embed.runkit.com", "type": "script" },
+          "https://unpkg.com/react@15/dist/react.js",
+          "https://unpkg.com/react-dom@15/dist/react-dom.js",
+          "https://unpkg.com/babel-standalone@6/babel.min.js",
+          { "path": "https://unpkg.com/codemirror@5", "type": "script" },
+          "https://unpkg.com/codemirror@5/mode/javascript/javascript.js",
+          "https://unpkg.com/codemirror@5/addon/edit/matchbrackets.js",
+          "https://unpkg.com/codemirror@5/addon/edit/closebrackets.js",
+          { "path": "docsAssets/repl.jsx", "type": "script", "attrs": { "type": "text/babel" } }
+        ]
+      }
     }
   ]
 }
