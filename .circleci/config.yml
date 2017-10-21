@@ -35,10 +35,10 @@ jobs:
           command: npm test
       - run:
           name: Update lockfile
-          command: greenkeeper-lockfile-update
+          command: sudo greenkeeper-lockfile-update
       - run:
           name: Upload lockfile
-          command: greenkeeper-lockfile-upload
+          command: sudo greenkeeper-lockfile-upload
       - deploy:
           name: Publish
           command: |
