@@ -1,4 +1,4 @@
-/* eslint-disable import/unambiguous */
+/* eslint-disable import/unambiguous, max-len */
 
 /**
  * A plain object that is shared for the given request. It is passed to all policies that execute for the given
@@ -199,9 +199,8 @@
  * A function called to find records.
  * @property {function(id: string, meta: Meta): Promise.<SerializedRecord, Error>|SerializedRecord} [findOne] A
  * function called to find a single record.
- * @property {function(id: string, data: SerializedRecord, completeData: SerializedRecord, meta: Meta,
- * unserializedData: Record, unserializedCompleteData: Record): Promise.<SerializedRecord, Error>|SerializedRecord}
- * [findOneAndUpdate] A function called to update a single record.
+ * @property {function(id: string, data: SerializedRecord, completeData: SerializedRecord, meta: Meta, unserializedData: Record, unserializedCompleteData: Record):
+ * Promise.<SerializedRecord, Error>|SerializedRecord} [findOneAndUpdate] A function called to update a single record.
  * @property {function(id: string, meta: Meta): Promise.<*, Error>|*} [findOneAndDelete] A function called to delete
  * a single record.
  * @param {function(data: Record): Promise.<SerializedRecord, Error>|SerializedRecord} [serialize] A function
