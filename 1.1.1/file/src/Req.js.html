@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <base data-ice="baseUrl" href="../../">
+  <title data-ice="title">src/Req.js | Autonym</title>
+  <link type="text/css" rel="stylesheet" href="css/style.css">
+  <link type="text/css" rel="stylesheet" href="css/prettify-tomorrow.css">
+  <script src="script/prettify/prettify.js"></script>
+  <script src="script/manual.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/codemirror@5/lib/codemirror.css">
+<link rel="stylesheet" href="assets/docsAssets/styles.css">
+<meta name="description" content="A KISS JSON REST API framework that can be mounted to your Express application."><meta property="twitter:card" content="summary"><meta property="twitter:title" content="Autonym"><meta property="twitter:description" content="A KISS JSON REST API framework that can be mounted to your Express application."></head>
+<body class="layout-container" data-ice="rootContainer">
+
+<header>
+  <a href="./">Home</a>
+  
+  <a href="identifiers.html">Reference</a>
+  <a href="source.html">Source</a>
+  
+  <div class="search-box">
+  <span>
+    <img src="./image/search.png">
+    <span class="search-input-edge"></span><input class="search-input"><span class="search-input-edge"></span>
+  </span>
+    <ul class="search-result"></ul>
+  </div>
+<a style="position:relative; top:3px;" href="https://github.com/mmiller42/autonym"><img width="20px" src="./image/github.png"></a></header>
+
+<nav class="navigation" data-ice="nav"><div>
+  <ul>
+    
+  <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/AutonymError.js~AutonymError.html">AutonymError</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/Model.js~Model.html">Model</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/Req.js~Req.html">Req</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/Res.js~Res.html">Res</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-createInMemoryStore">createInMemoryStore</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-createModelMiddleware">createModelMiddleware</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-createResponderMiddleware">createResponderMiddleware</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-AjvOptions">AjvOptions</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-AndExpression">AndExpression</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Meta">Meta</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-ModelPolicies">ModelPolicies</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-NotExpression">NotExpression</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Operand">Operand</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-OrExpression">OrExpression</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Policy">Policy</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Record">Record</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Schema">Schema</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-SerializedRecord">SerializedRecord</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Store">Store</a></span></span></li>
+</ul>
+</div>
+</nav>
+
+<div class="content" data-ice="content"><h1 data-ice="title">src/Req.js</h1>
+<pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">import { cloneDeep, defaultsDeep, isPlainObject } from &apos;lodash&apos;
+import assignDeep from &apos;assign-deep&apos;
+import { deleteUndefineds } from &apos;./utils&apos;
+
+/**
+ * A wrapper for the request object with helper methods and access to Autonym model data.
+ */
+export default class Req {
+  /**
+   * @param {http.IncomingMessage} raw The raw IncomingMessage object.
+   * @param {Model} model The Autonym model instance.
+   * @param {Meta} meta The meta object aggregated by policies during the request.
+   * @example
+   * const req = new AutonymReq(request, Post, meta)
+   */
+  constructor(raw, model, meta) {
+    raw.autonym = this
+    raw.autonymMeta = meta
+
+    this._raw = raw
+    this._model = model
+    this._data = this.hasBody() ? cloneDeep(raw.body) : null
+    this._originalData = null
+    this._isValidated = false
+  }
+
+  /**
+   * Gets the raw request.
+   * @returns {http.IncomingMessage} The raw request.
+   */
+  getRaw() {
+    return this._raw
+  }
+
+  /**
+   * Gets the request payload.
+   * @returns {Record} The data.
+   * @throws {ReferenceError} If the request does not have a body.
+   */
+  getData() {
+    if (!this.hasBody()) {
+      throw new ReferenceError(&apos;Cannot get request data from a request without a body.&apos;)
+    }
+    return this._data
+  }
+
+  /**
+   * Merges the request data with the given data, without modifying the original request.
+   * @param {Record} data The new properties to set.
+   * @param {boolean} [replace] If true, replaces the data on the response instead of merging it.
+   * @returns {void}
+   * @throws {ReferenceError} If the request does not have a body.
+   * @example
+   * console.log(req.getData()) // { title: &apos;Hello World&apos; }
+   * req.setData({ name: &apos;Test&apos; })
+   * console.log(req.getData()) // { name: &apos;Test&apos;, title: &apos;Hello World&apos; }
+   * @example
+   * console.log(req.getData()) // { title: &apos;Hello World&apos; }
+   * req.setData({ name: &apos;Test&apos; }, true)
+   * console.log(req.getData()) // { name: &apos;Test&apos; }
+   */
+  setData(data, replace = false) {
+    if (!isPlainObject(data)) {
+      throw new TypeError(&apos;The data must be a plain object.&apos;)
+    }
+    if (!this.hasBody()) {
+      throw new ReferenceError(&apos;Cannot set request data on a request without a body.&apos;)
+    }
+
+    if (replace) {
+      this._data = data
+    } else {
+      assignDeep(this._data, data)
+    }
+
+    deleteUndefineds(this._data)
+  }
+
+  /**
+   * Gets the data that was originally on the request body.
+   * @returns {Record} The data.
+   * @throws {ReferenceError} If the request does not have a body.
+   */
+  getRequestData() {
+    if (!this.hasBody()) {
+      throw new ReferenceError(&apos;Cannot get request data from a request without a body.&apos;)
+    }
+    return this.getRaw().body
+  }
+
+  /**
+   * For update queries, gets the data of the original record to update. For create queries, gets an empty object.
+   * @returns {Promise.&lt;Record, AutonymError&gt;} The original record data.
+   * @throws {ReferenceError} If the request is not a create or update request.
+   * @example
+   * console.log(req.getData()) // { title: &apos;Test&apos; }
+   * const originalData = await req.getOriginalData()
+   * console.log(originalData) // { title: &apos;Hello World&apos;, body: &apos;This is my first post.&apos; }
+   */
+  async getOriginalData() {
+    if (!this.isWriting()) {
+      throw new ReferenceError(&apos;Cannot get original data on a request without a body.&apos;)
+    }
+    if (!this._originalData) {
+      this._originalData = this.isCreating() ? {} : this.getModel().findOne(this.getId())
+    }
+    return this._originalData
+  }
+
+  /**
+   * Gets the result of merging the original data (see `#getOriginalData`) with the request data.
+   * @returns {Promise.&lt;Record, AutonymError&gt;} The merged data.
+   * @example
+   * console.log(req.getData()) // { title: &apos;Test&apos; }
+   * const originalData = await req.getCompleteData()
+   * console.log(originalData) // { title: &apos;Test&apos;, body: &apos;This is my first post.&apos; }
+   */
+  async getCompleteData() {
+    const originalData = await this.getOriginalData()
+    return defaultsDeep({}, this.getData(), originalData)
+  }
+
+  /**
+   * Gets the model instance.
+   * @returns {Model} The model.
+   */
+  getModel() {
+    return this._model
+  }
+
+  /**
+   * Gets the request query.
+   * @returns {object} The query.
+   */
+  getQuery() {
+    return this.getRaw().query
+  }
+
+  /**
+   * Gets the requested record id.
+   * @returns {string} The record id.
+   * @throws {ReferenceError} If it is a create or find request.
+   */
+  getId() {
+    if (!this.hasId()) {
+      throw new ReferenceError(&apos;Cannot get id of request that creates or finds multiple.&apos;)
+    }
+    return this.getRaw().params.id
+  }
+
+  /**
+   * Gets the given header.
+   * @param {string} header The header to find.
+   * @returns {string|undefined} The header value.
+   */
+  getHeader(header) {
+    return this.getRaw().get(header)
+  }
+
+  /**
+   * Whether this step is occurring with safe data, i.e. the data has been validated, filtered, and populated with
+   * defaults.
+   * @returns {boolean} True if it has passed the preSchema and validateAgainstSchema steps.
+   */
+  isValidated() {
+    return this._isValidated
+  }
+
+  /**
+   * Whether this is a create request.
+   * @returns {boolean} True if it is a create request.
+   */
+  isCreating() {
+    return this.getRaw().method === &apos;POST&apos;
+  }
+
+  /**
+   * Whether this is a find request.
+   * @returns {boolean} True if it is a find request.
+   */
+  isFinding() {
+    return this.getRaw().method === &apos;GET&apos; &amp;&amp; !this.getRaw().params.id
+  }
+
+  /**
+   * Whether this is a findOne request.
+   * @returns {boolean} True if it is a findOne request.
+   */
+  isFindingOne() {
+    return this.getRaw().method === &apos;GET&apos; &amp;&amp; this.getRaw().params.id
+  }
+
+  /**
+   * Whether this is a findOneAndUpdate request.
+   * @returns {boolean} True if it is a findOneAndUpdate request.
+   */
+  isFindingOneAndUpdating() {
+    return this.getRaw().method === &apos;PATCH&apos; || this.getRaw().method === &apos;PUT&apos;
+  }
+
+  /**
+   * Whether this is a findOneAndDelete request.
+   * @returns {boolean} True if it is a findOneAndDelete request.
+   */
+  isFindingOneAndDeleting() {
+    return this.getRaw().method === &apos;DELETE&apos;
+  }
+
+  /**
+   * Whether this is a readonly request to fetch data.
+   * @returns {boolean} True if it is a find or findOne request.
+   */
+  isGetting() {
+    return this.isFinding() || this.isFindingOne()
+  }
+
+  /**
+   * Whether this is a request that will return response data.
+   * @returns {boolean} True if it is a create, find, findOne, or findOneAndUpdate request.
+   */
+  isReading() {
+    return !this.isFindingOneAndDeleting()
+  }
+
+  /**
+   * Whether this request has a body.
+   * @returns {boolean} True if it is a create or findOneAndUpdate request.
+   */
+  hasBody() {
+    return this.isCreating() || this.isFindingOneAndUpdating()
+  }
+
+  /**
+   * Whether this is a request that will modify the data store.
+   * @returns {boolean} True if it is a create, findOneAndUpdate, or findOneAndDelete request.
+   */
+  isWriting() {
+    return this.hasBody() || this.isFindingOneAndDeleting()
+  }
+
+  /**
+   * Whether this is a request for a particular record.
+   * @returns {boolean} True if it is a findOne, findOneAndUpdate, or findOneAndDelete request.
+   */
+  hasId() {
+    return this.isFindingOne() || this.isFindingOneAndUpdating() || this.isFindingOneAndDeleting()
+  }
+}
+</code></pre>
+
+</div>
+
+<footer class="footer">
+  Generated by <a href="https://esdoc.org">ESDoc<span data-ice="esdocVersion">(1.0.2)</span><img src="./image/esdoc-logo-mini-black.png"></a>
+</footer>
+
+<script src="script/search_index.js"></script>
+<script src="script/search.js"></script>
+<script src="script/pretty-print.js"></script>
+<script src="script/inherited-summary.js"></script>
+<script src="script/test-summary.js"></script>
+<script src="script/inner-link.js"></script>
+<script src="script/patch-for-local.js"></script>
+<script src="https://unpkg.com/es5-shim@4"></script>
+<script src="https://unpkg.com/promise-polyfill@6"></script>
+<script src="https://unpkg.com/whatwg-fetch@2"></script>
+<script src="https://embed.runkit.com"></script>
+<script src="https://unpkg.com/react@15/dist/react.js"></script>
+<script src="https://unpkg.com/react-dom@15/dist/react-dom.js"></script>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+<script src="https://unpkg.com/codemirror@5"></script>
+<script src="https://unpkg.com/codemirror@5/mode/javascript/javascript.js"></script>
+<script src="https://unpkg.com/codemirror@5/addon/edit/matchbrackets.js"></script>
+<script src="https://unpkg.com/codemirror@5/addon/edit/closebrackets.js"></script>
+<script type="text/babel" src="assets/docsAssets/repl.jsx"></script>
+</body>
+</html>
