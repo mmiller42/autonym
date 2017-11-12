@@ -193,15 +193,15 @@
  * An object that has methods for CRUD operations for a typical record. It does not matter if this is a plain
  * object or an instance of a Store class, as long as it has these members on it.
  * @typedef {object} Store
- * @property {function(data: SerializedRecord, meta: Meta): Promise.<SerializedRecord, Error>|SerializedRecord}
- * [create] A function called to create a new record.
+ * @property {function(data: SerializedRecord, meta: Meta, unserializedData: Record):
+ * Promise.<SerializedRecord, Error>|SerializedRecord} [create] A function called to create a new record.
  * @property {function(query: object, meta: Meta): Promise.<SerializedRecord[], Error>|SerializedRecord[]} [find]
  * A function called to find records.
  * @property {function(id: string, meta: Meta): Promise.<SerializedRecord, Error>|SerializedRecord} [findOne] A
  * function called to find a single record.
- * @property {function(id: string, data: SerializedRecord, completeData: SerializedRecord, meta: Meta):
- * Promise.<SerializedRecord, Error>|SerializedRecord} [findOneAndUpdate] A function called to update a single
- * record.
+ * @property {function(id: string, data: SerializedRecord, completeData: SerializedRecord, meta: Meta,
+ * unserializedData: Record, unserializedCompleteData: Record): Promise.<SerializedRecord, Error>|SerializedRecord}
+ * [findOneAndUpdate] A function called to update a single record.
  * @property {function(id: string, meta: Meta): Promise.<*, Error>|*} [findOneAndDelete] A function called to delete
  * a single record.
  * @param {function(data: Record): Promise.<SerializedRecord, Error>|SerializedRecord} [serialize] A function

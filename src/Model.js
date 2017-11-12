@@ -326,7 +326,7 @@ export default class Model {
       data,
       async transformedData => {
         const serializedData = await this.serialize(transformedData)
-        const result = await this.getConfig().store.create(serializedData, meta)
+        const result = await this.getConfig().store.create(serializedData, meta, transformedData)
         return this.unserialize(result)
       },
       hookArgs
@@ -424,12 +424,20 @@ export default class Model {
       'findOneAndUpdate',
       fetchedCompleteData,
       async transformedData => {
+        const transformedDataToUpdate = filterToProperties(transformedData, data)
         const [serializedData, serializedCompleteData] = await Promise.all([
-          this.serialize(filterToProperties(transformedData, data)),
+          this.serialize(transformedDataToUpdate),
           this.serialize(transformedData),
         ])
 
-        const result = await this.getConfig().store.findOneAndUpdate(id, serializedData, serializedCompleteData, meta)
+        const result = await this.getConfig().store.findOneAndUpdate(
+          id,
+          serializedData,
+          serializedCompleteData,
+          meta,
+          transformedDataToUpdate,
+          transformedData
+        )
         return this.unserialize(result)
       },
       hookArgs
