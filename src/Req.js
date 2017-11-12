@@ -1,5 +1,6 @@
-import { cloneDeep, defaultsDeep, isPlainObject } from 'lodash'
+import { cloneDeep, isPlainObject } from 'lodash'
 import assignDeep from 'assign-deep'
+import defaultsDeep from '@nodeutils/defaults-deep'
 import { deleteUndefineds } from './utils'
 
 /**

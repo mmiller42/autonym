@@ -84,6 +84,7 @@
     "body-parser": "^1.0.0"
   },
   "dependencies": {
+    "@nodeutils/defaults-deep": "^1.1.0",
     "ajv": "^5.2.2",
     "assign-deep": "^0.4.6",
     "async-boolean-expression-evaluator": "^2.0.0",
