@@ -100,6 +100,10 @@ export default class Res {
     }
   }
 
+  _setErrorData(data) {
+    this._data = data
+  }
+
   /**
    * Gets the currently set status code.
    * @returns {number|null} The status code.
