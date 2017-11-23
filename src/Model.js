@@ -1,7 +1,8 @@
 import { checkForUnrecognizedProperties, cloneInstance, filterToProperties } from './utils'
-import { cloneDeep, defaultsDeep, forEach, isPlainObject, kebabCase, mapValues, noop, reduce } from 'lodash'
+import { cloneDeep, forEach, isPlainObject, kebabCase, mapValues, noop, reduce } from 'lodash'
 import Ajv from 'ajv'
 import AutonymError from './AutonymError'
+import defaultsDeep from '@nodeutils/defaults-deep'
 import { pluralize } from 'inflection'
 
 const STORE_METHODS = ['create', 'find', 'findOne', 'findOneAndUpdate', 'findOneAndDelete']
@@ -99,7 +100,7 @@ export default class Model {
       }
     })
 
-    const normalizedConfig = defaultsDeep({}, config, {
+    const normalizedConfig = defaultsDeep(config, {
       init: noop,
       schema: null,
       optionalUpdateProperties: [],
@@ -418,7 +419,7 @@ export default class Model {
       throw new TypeError('meta parameter must be a plain object.')
     }
 
-    const fetchedCompleteData = completeData || (await this.getConfig().store.findOne(id))
+    const fetchedCompleteData = defaultsDeep(data, completeData || (await this.getConfig().store.findOne(id)))
 
     return this._callWithHooks(
       'findOneAndUpdate',
@@ -525,7 +526,7 @@ export default class Model {
    *
    * console.log(validatedData) // { title: 'Hello World' }
    */
-  async validateAgainstSchema(data, method = null) {
+  async validateAgainstSchema(data, method) {
     return this.getConfig().validateAgainstSchema(data, method === 'findOneAndUpdate')
   }
 

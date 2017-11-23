@@ -118,7 +118,7 @@ export default class Req {
    */
   async getCompleteData() {
     const originalData = await this.getOriginalData()
-    return defaultsDeep({}, this.getData(), originalData)
+    return defaultsDeep(this.getData(), originalData)
   }
 
   /**
