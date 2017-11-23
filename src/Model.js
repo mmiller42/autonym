@@ -53,6 +53,9 @@ export default class Model {
     if (config.ajvOptions !== undefined && !isPlainObject(config.ajvOptions)) {
       throw new TypeError('config.ajvOptions parameter must be a plain object or undefined.')
     }
+    if (config.getAjv !== undefined && typeof config.getAjv !== 'function') {
+      throw new TypeError('config.getAjv parameter must be a function or undefined.')
+    }
     if (config.policies !== undefined && !isPlainObject(config.policies)) {
       throw new TypeError('config.policies parameter must be a plain object or undefined.')
     }
@@ -85,6 +88,7 @@ export default class Model {
       'schema',
       'optionalUpdateProperties',
       'ajvOptions',
+      'getAjv',
       'policies',
       'store',
       'route',
@@ -111,6 +115,7 @@ export default class Model {
         useDefaults: true,
         errorDataPath: 'property',
       },
+      getAjv: noop,
       policies: reduce(
         POLICY_LIFECYCLE_HOOKS,
         (policies, hooks, method) => {
@@ -140,7 +145,10 @@ export default class Model {
     normalizedConfig.init = async () => init()
 
     if (normalizedConfig.schema) {
-      const validateAgainstSchema = new Ajv(normalizedConfig.ajvOptions).compile(normalizedConfig.schema)
+      const ajv = new Ajv(normalizedConfig.ajvOptions)
+      normalizedConfig.getAjv(ajv)
+
+      const validateAgainstSchema = ajv.compile(normalizedConfig.schema)
 
       let validateUpdateAgainstSchema = validateAgainstSchema
       if (normalizedConfig.optionalUpdateProperties.length > 0) {
@@ -159,7 +167,7 @@ export default class Model {
 
           object.required = object.required.filter(prop => prop !== propertyToRemove)
         })
-        validateUpdateAgainstSchema = new Ajv(normalizedConfig.ajvOptions).compile(filteredSchema)
+        validateUpdateAgainstSchema = ajv.compile(filteredSchema)
       }
 
       normalizedConfig.validateAgainstSchema = async (data, isUpdate = false) => {
@@ -198,6 +206,8 @@ export default class Model {
    * with the existing record before schema validation occurs, but this can be helpful when properties are converted to
    * computed properties when saved (e.g. user records that have a passwordHash property and whose password is deleted).
    * @param {AjvOptions} [config.ajvOptions] Additional options to pass to the Ajv instance.
+   * @param {function(ajv: Ajv): *} A function called when the Ajv object is instantiated. It is passed the Ajv instance
+   * for hooking in custom keywords, etc.
    * @param {ModelPolicies} [config.policies] Configuration policies.
    * @param {Store} config.store Configuration store.
    * @param {string} [config.route] The route to use for requests of this type of record. Defaults to pluralizing
