@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <base data-ice="baseUrl" href="../../">
+  <title data-ice="title">src/_typeDefs.js | Autonym</title>
+  <link type="text/css" rel="stylesheet" href="css/style.css">
+  <link type="text/css" rel="stylesheet" href="css/prettify-tomorrow.css">
+  <script src="script/prettify/prettify.js"></script>
+  <script src="script/manual.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/codemirror@5/lib/codemirror.css">
+<link rel="stylesheet" href="assets/docsAssets/styles.css">
+<meta name="description" content="A KISS JSON REST API framework that can be mounted to your Express application."><meta property="twitter:card" content="summary"><meta property="twitter:title" content="Autonym"><meta property="twitter:description" content="A KISS JSON REST API framework that can be mounted to your Express application."></head>
+<body class="layout-container" data-ice="rootContainer">
+
+<header>
+  <a href="./">Home</a>
+  
+  <a href="identifiers.html">Reference</a>
+  <a href="source.html">Source</a>
+  
+  <div class="search-box">
+  <span>
+    <img src="./image/search.png">
+    <span class="search-input-edge"></span><input class="search-input"><span class="search-input-edge"></span>
+  </span>
+    <ul class="search-result"></ul>
+  </div>
+<a style="position:relative; top:3px;" href="https://github.com/mmiller42/autonym"><img width="20px" src="./image/github.png"></a></header>
+
+<nav class="navigation" data-ice="nav"><div>
+  <ul>
+    
+  <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/AutonymError.js~AutonymError.html">AutonymError</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/Model.js~Model.html">Model</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/Req.js~Req.html">Req</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/Res.js~Res.html">Res</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-createInMemoryStore">createInMemoryStore</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-createModelMiddleware">createModelMiddleware</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-createResponderMiddleware">createResponderMiddleware</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-AjvOptions">AjvOptions</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-AndExpression">AndExpression</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Meta">Meta</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-ModelPolicies">ModelPolicies</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-NotExpression">NotExpression</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Operand">Operand</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-OrExpression">OrExpression</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Policy">Policy</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Record">Record</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Schema">Schema</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-SerializedRecord">SerializedRecord</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Store">Store</a></span></span></li>
+</ul>
+</div>
+</nav>
+
+<div class="content" data-ice="content"><h1 data-ice="title">src/_typeDefs.js</h1>
+<pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">/* eslint-disable import/unambiguous, max-len */
+
+/**
+ * A plain object that is shared for the given request. It is passed to all policies that execute for the given
+ * store method, which can read and mutate it freely, and passed into the given store method. The meta object can be
+ * used to add non-serializable data that is useful in the store method, data that is tangentially related to the
+ * request but does not belong in the body (such as information about the current user session), cached results of
+ * policies that may be repeated in an expression, etc.
+ * @typedef {object} Meta
+ * @example
+ * async function getCurrentUserPolicy(req, res, meta) {
+ *   if (meta.user) {
+ *     // We already have fetched the user (i.e. this policy has probably already been run in this request).
+ *     return
+ *   }
+ *   const authHeader = req.getHeader(&apos;Authorization&apos;)
+ *   if (!authHeader) {
+ *     throw new AutonymError(AutonymError.UNAUTHORIZED, &apos;You must be logged in to perform this action.&apos;)
+ *   }
+ *
+ *   const [, token] = authHeader.split(&apos;Bearer &apos;)
+ *   const data = await verify(token)
+ *   // Save data on meta object, which will be accessible on subsequent policies and store methods.
+ *   meta.user = await User.findOne(data.userId)
+ * }
+ *
+ * function canCreatePostPolicy(req, res, meta) {
+ *   // Access the user object saved in the previous policy. Note: this means this policy is tightly coupled to the
+ *   // getCurrentUserPolicy and will throw an error if it is used in isolation, which would by default return a 500
+ *   // error. We *could* `await getCurrentUserPolicy(req, res, meta)` here if we wanted to use this policy alone.
+ *   if (!meta.user.privileges.includes(&apos;createPost&apos;)) {
+ *     throw new AutonymError(AutonymError.FORBIDDEN, &apos;You must have the createPost privilege to perform this action.&apos;)
+ *   }
+ * }
+ *
+ * const Post = new Model({
+ *   name: &apos;post&apos;,
+ *   policies: {
+ *     create: { and: [getCurrentUserPolicy, canCreatePostPolicy] },
+ *   },
+ *   store: {
+ *     // Since the `getCurrentUserPolicy` was called before inserting, the `user` object is available in the store
+ *     // methods. If calling the API programmatically, e.g. `Post.create()`, this data will need to be supplied
+ *     // manually in the `create` method, since policies are not called when using the model instance directly.
+ *     create: (data, meta) =&gt; Db.insert({ ...data, authorId: meta.user.id }),
+ *   }
+ * })
+ */
+
+/**
+ * An object mapping store method names to policy hooks. The hooks will be run for the given method. If the value is
+ * just `true`, it is assumed that all requests will be honored and no policies are necessary for any lifecycle event;
+ * if just `false`, it is assumed no requests will be honored.
+ * @typedef {object} ModelPolicies
+ * @property {object|boolean} [create] Policies to run for the `create` method.
+ * @property {Operand} [create.preSchema] An expression to evaluate before the data is validated against the schema.
+ * @property {Operand} [create.postSchema] An expression to evaluate after the data is validated against the schema.
+ * @property {Operand} [create.preStore] An expression to evaluate before the data is passed to the store method.
+ * @property {Operand} [create.postStore] An expression to evaluate after the store method has completed.
+ * @property {object|boolean} [find] Policies to run for the `find` method.
+ * @property {Operand} [find.preStore] An expression to evaluate before the data is passed to the store method.
+ * @property {Operand} [find.postStore] An expression to evaluate after the store method has completed.
+ * @property {object|boolean} [findOne] Policies to run for the `findOne` method.
+ * @property {Operand} [findOne.preStore] An expression to evaluate before the data is passed to the store method.
+ * @property {Operand} [findOne.postStore] An expression to evaluate after the store method has completed.
+ * @property {object|boolean} [findOneAndUpdate] Policies to run for the `findOneAndUpdate` method.
+ * @property {Operand} [findOneAndUpdate.preSchema] An expression to evaluate before the data is validated against the
+ * schema.
+ * @property {Operand} [findOneAndUpdate.postSchema] An expression to evaluate after the data is validated against the
+ * schema.
+ * @property {Operand} [findOneAndUpdate.preStore] An expression to evaluate before the data is passed to the store
+ * method.
+ * @property {Operand} [findOneAndUpdate.postStore] An expression to evaluate after the store method has completed.
+ * @property {object|boolean} [findOneAndDelete] Policies to run for the `findOneAndDelete` method.
+ * @property {Operand} [findOneAndDelete.preStore] An expression to evaluate before the data is passed to the store
+ * method.
+ * @property {Operand} [findOneAndDelete.postStore] An expression to evaluate after the store method has completed.
+ * @example
+ * const Post = new Model({
+ *   name: &apos;post&apos;,
+ *   policies: {
+ *     create: {
+ *       // Users must be logged in and have the proper permission to create a post
+ *       preSchema: { and: [getCurrentUserPolicy, canCreatePostPolicy] },
+ *       // Once the post is validated, it is safe to read and manipulate the request data
+ *       postSchema: trimPostBodyPolicy,
+ *     },
+ *     find: {
+ *       // All requests to get all posts should include a header with the total count
+ *       postStore: addTotalCountHeaderToResponsePolicy,
+ *     },
+ *     findOneAndUpdate: {
+ *       // Users must be logged in and own the post that they are trying to update
+ *       preSchema: { and: [getCurrentUserPolicy, userIsOwnerOfPostPolicy] },
+ *       postSchema: trimPostBodyPolicy,
+ *     },
+ *     findOneAndDelete: {
+ *       preStore: { and: [getCurrentUserPolicy, userIsOwnerOfPostPolicy] },
+ *     },
+ *   },
+ *   store: {},
+ * })
+ */
+
+/**
+ * An operand is a boolean (to explicitly allow or deny) or a policy function, or an AndExpression, OrExpression, or
+ * NotExpression, which can be used to assemble more complex policies out of a series of policy functions.
+ * AndExpressions, OrExpressions, and NotExpressions may be nested recursively. For details, see the documentation
+ * of [async-boolean-expression-evaluator](https://github.com/mmiller42/async-boolean-expression-evaluator).
+ * @typedef {boolean|Policy|AndExpression|OrExpression|NotExpression} Operand
+ */
+
+/**
+ * An object with the key `and` set to an array of Operands. The expression will only evaluate to true if none of
+ * the operands are false or throw errors. The error of the first policy to throw will be used, and short-circuiting
+ * will prevent further policies from executing when one throws.
+ * @typedef {object} AndExpression
+ * @property {Operand[]} and
+ */
+
+/**
+ * An object with the key `or` set to an array of Operands. The expression will only evaluate to true if at least
+ * one of the operands is true or does not throw an error. The error of the last policy that throws will be used,
+ * and short-circuiting will prevent further policies from executing when one does not throw.
+ * @typedef {object} OrExpression
+ * @property {Operand[]} or
+ */
+
+/**
+ * An object with the key `not` set to an Operand. The expression will only evaluate to true if the result of the
+ * operand is false or throws an error (which will be swallowed). If the result is true or does not throw an error,
+ * a generic error will be thrown, so implement a custom policy if you require a more specific error message.
+ * @typedef {object} NotExpression
+ * @property {Operand} not
+ */
+
+/**
+ * A function that is evaluated before a store method. It may modify the request data, validate the data and throw an
+ * error, or determine that the client may not perform this request and throw an error. Policies may be combined in
+ * an expression and applied to various store methods in a model&apos;s configuration.
+ * @typedef {function(req: AutonymReq, res: AutonymRes, meta: Meta): Promise.&lt;*, Error&gt;|*} Policy
+ * @example
+ * async function getCurrentUserPolicy(req, res, meta) {
+ *   if (meta.user) {
+ *     // We already have fetched the user (i.e. this policy has probably already been run in this request).
+ *     return
+ *   }
+ *   const authHeader = req.getHeader(&apos;Authorization&apos;)
+ *   if (!authHeader) {
+ *     throw new AutonymError(AutonymError.UNAUTHORIZED, &apos;You must be logged in to perform this action.&apos;)
+ *   }
+ *
+ *   const [, token] = authHeader.split(&apos;Bearer &apos;)
+ *   const data = await verify(token)
+ *   // Save data on meta object, which will be accessible on subsequent policies and store methods.
+ *   meta.user = await User.findOne(data.userId)
+ * }
+ * @example
+ * function canCreatePostPolicy(req, res, meta) {
+ *   // Access the user object saved in the previous policy. Note: this means this policy is tightly coupled to the
+ *   // getCurrentUserPolicy and will throw an error if it is used in isolation, which would by default return a 500
+ *   // error. We *could* `await getCurrentUserPolicy(req, res, meta)` here if we wanted to use this policy alone.
+ *   if (!meta.user.privileges.includes(&apos;createPost&apos;)) {
+ *     throw new AutonymError(AutonymError.FORBIDDEN, &apos;You must have the createPost privilege to perform this action.&apos;)
+ *   }
+ * }
+ * @example
+ * function userIsOwnerOfPostPolicy(req, res, meta) {
+ *   if (req.getId() !== req.meta.user.id) {
+ *     throw new AutonymError(AutonymError.FORBIDDEN, &apos;You are not the owner of this post.&apos;)
+ *   }
+ * }
+ * @example
+ * function trimPostBodyPolicy(req, res, meta) {
+ *   // If this policy is in the postSchema hook, it is safe to get and set data.
+ *   req.setData({ body: req.getData().body.trim() })
+ * }
+ * @example
+ * Post.count = () =&gt; Db.selectCount(&apos;posts&apos;)
+ *
+ * async function addTotalCountHeaderToResponsePolicy(req, res, meta) {
+ *   // If this policy is in the postStore hook, it is safe to get and modify the response data.
+ *
+ *   const model = req.getModel()
+ *   if (model.count) {
+ *     const totalCount = await req.getModel().count()
+ *     res.setHeader(&apos;X-Total-Count&apos;, totalCount)
+ *   }
+ * }
+ */
+
+/**
+ * An object that has methods for CRUD operations for a typical record. It does not matter if this is a plain
+ * object or an instance of a Store class, as long as it has these members on it.
+ * @typedef {object} Store
+ * @property {function(data: SerializedRecord, meta: Meta, unserializedData: Record):
+ * Promise.&lt;SerializedRecord, Error&gt;|SerializedRecord} [create] A function called to create a new record.
+ * @property {function(query: object, meta: Meta): Promise.&lt;SerializedRecord[], Error&gt;|SerializedRecord[]} [find]
+ * A function called to find records.
+ * @property {function(id: string, meta: Meta): Promise.&lt;SerializedRecord, Error&gt;|SerializedRecord} [findOne] A
+ * function called to find a single record.
+ * @property {function(id: string, data: SerializedRecord, completeData: SerializedRecord, meta: Meta, unserializedData: Record, unserializedCompleteData: Record):
+ * Promise.&lt;SerializedRecord, Error&gt;|SerializedRecord} [findOneAndUpdate] A function called to update a single record.
+ * @property {function(id: string, meta: Meta): Promise.&lt;*, Error&gt;|*} [findOneAndDelete] A function called to delete
+ * a single record.
+ * @param {function(data: Record): Promise.&lt;SerializedRecord, Error&gt;|SerializedRecord} [serialize] A function
+ * called to reformat the request body automatically before passing it into the `create` and `findOneAndUpdate`
+ * store methods. It must be able to handle partial data objects.
+ * @param {function(data: SerializedRecord): Promise.&lt;Record, Error&gt;|Record} [unserialize] A function called to
+ * reformat the store method&apos;s return value automatically before passing it into `postStore` policies and
+ * subsequently to the response.
+ * @example
+ * const Post = new Model({
+ *   name: &apos;post&apos;,
+ *   store: {
+ *     create: data =&gt; Db.insert(&apos;posts&apos;, data),
+ *     find: () =&gt; Db.selectAll(&apos;posts&apos;),
+ *     findOne: id =&gt; Db.selectOne(&apos;posts&apos;, { id }),
+ *     findOneAndUpdate: (id, data) =&gt; Db.updateWhere(&apos;posts&apos;, { id }, data),
+ *     findOneAndDelete: id =&gt; Db.deleteWhere(&apos;posts&apos;, { id }),
+ *
+ *     // Column names are the same as properties on the data, but in snake-case
+ *     serialize: data =&gt; mapKeys(data, property =&gt; snakeCase(property)),
+ *     // Properties are the same as column names in the table, but in camel-case
+ *     unserialize: data =&gt; mapKeys(data, columnName =&gt; camelCase(columnName)),
+ *   },
+ * })
+ */
+
+/**
+ * An object that represents a record that may be operated on by a model. A record may be partial (e.g. if it is
+ * the properties to update in a findOneAndUpdate request). If it is the result of a store method, it should at
+ * least have an `id` property.
+ * @typedef {object} Record
+ */
+
+/**
+ * A Record that has been transformed by the serialize function as a matter of convenience. It is only used in the
+ * store methods and is always unserialized back into a Record before being passed onto other code outside the
+ * store methods.
+ * @typedef {object} SerializedRecord
+ */
+
+/**
+ * A JSON schema object. [Read more about JSON Schema](http://json-schema.org/)
+ * @typedef {object} Schema
+ */
+
+/**
+ * Options to pass to the JSON schema validator. [See options](https://github.com/epoberezkin/ajv#options)
+ * @typedef {object} AjvOptions
+ */
+</code></pre>
+
+</div>
+
+<footer class="footer">
+  Generated by <a href="https://esdoc.org">ESDoc<span data-ice="esdocVersion">(1.0.2)</span><img src="./image/esdoc-logo-mini-black.png"></a>
+</footer>
+
+<script src="script/search_index.js"></script>
+<script src="script/search.js"></script>
+<script src="script/pretty-print.js"></script>
+<script src="script/inherited-summary.js"></script>
+<script src="script/test-summary.js"></script>
+<script src="script/inner-link.js"></script>
+<script src="script/patch-for-local.js"></script>
+<script src="https://unpkg.com/es5-shim@4"></script>
+<script src="https://unpkg.com/promise-polyfill@6"></script>
+<script src="https://unpkg.com/whatwg-fetch@2"></script>
+<script src="https://embed.runkit.com"></script>
+<script src="https://unpkg.com/react@15/dist/react.js"></script>
+<script src="https://unpkg.com/react-dom@15/dist/react-dom.js"></script>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+<script src="https://unpkg.com/codemirror@5"></script>
+<script src="https://unpkg.com/codemirror@5/mode/javascript/javascript.js"></script>
+<script src="https://unpkg.com/codemirror@5/addon/edit/matchbrackets.js"></script>
+<script src="https://unpkg.com/codemirror@5/addon/edit/closebrackets.js"></script>
+<script type="text/babel" src="assets/docsAssets/repl.jsx"></script>
+</body>
+</html>

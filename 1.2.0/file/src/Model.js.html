@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <base data-ice="baseUrl" href="../../">
+  <title data-ice="title">src/Model.js | Autonym</title>
+  <link type="text/css" rel="stylesheet" href="css/style.css">
+  <link type="text/css" rel="stylesheet" href="css/prettify-tomorrow.css">
+  <script src="script/prettify/prettify.js"></script>
+  <script src="script/manual.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/codemirror@5/lib/codemirror.css">
+<link rel="stylesheet" href="assets/docsAssets/styles.css">
+<meta name="description" content="A KISS JSON REST API framework that can be mounted to your Express application."><meta property="twitter:card" content="summary"><meta property="twitter:title" content="Autonym"><meta property="twitter:description" content="A KISS JSON REST API framework that can be mounted to your Express application."></head>
+<body class="layout-container" data-ice="rootContainer">
+
+<header>
+  <a href="./">Home</a>
+  
+  <a href="identifiers.html">Reference</a>
+  <a href="source.html">Source</a>
+  
+  <div class="search-box">
+  <span>
+    <img src="./image/search.png">
+    <span class="search-input-edge"></span><input class="search-input"><span class="search-input-edge"></span>
+  </span>
+    <ul class="search-result"></ul>
+  </div>
+<a style="position:relative; top:3px;" href="https://github.com/mmiller42/autonym"><img width="20px" src="./image/github.png"></a></header>
+
+<nav class="navigation" data-ice="nav"><div>
+  <ul>
+    
+  <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/AutonymError.js~AutonymError.html">AutonymError</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/Model.js~Model.html">Model</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/Req.js~Req.html">Req</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/Res.js~Res.html">Res</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-createInMemoryStore">createInMemoryStore</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-createModelMiddleware">createModelMiddleware</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-createResponderMiddleware">createResponderMiddleware</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-AjvOptions">AjvOptions</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-AndExpression">AndExpression</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Meta">Meta</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-ModelPolicies">ModelPolicies</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-NotExpression">NotExpression</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Operand">Operand</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-OrExpression">OrExpression</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Policy">Policy</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Record">Record</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Schema">Schema</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-SerializedRecord">SerializedRecord</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Store">Store</a></span></span></li>
+</ul>
+</div>
+</nav>
+
+<div class="content" data-ice="content"><h1 data-ice="title">src/Model.js</h1>
+<pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">import { checkForUnrecognizedProperties, cloneInstance, filterToProperties } from &apos;./utils&apos;
+import { cloneDeep, forEach, isPlainObject, kebabCase, mapValues, noop, reduce } from &apos;lodash&apos;
+import Ajv from &apos;ajv&apos;
+import AutonymError from &apos;./AutonymError&apos;
+import defaultsDeep from &apos;@nodeutils/defaults-deep&apos;
+import { pluralize } from &apos;inflection&apos;
+
+const STORE_METHODS = [&apos;create&apos;, &apos;find&apos;, &apos;findOne&apos;, &apos;findOneAndUpdate&apos;, &apos;findOneAndDelete&apos;]
+const POLICY_LIFECYCLE_HOOKS = {
+  create: [&apos;preSchema&apos;, &apos;postSchema&apos;, &apos;preStore&apos;, &apos;postStore&apos;],
+  find: [&apos;preStore&apos;, &apos;postStore&apos;],
+  findOne: [&apos;preStore&apos;, &apos;postStore&apos;],
+  findOneAndUpdate: [&apos;preSchema&apos;, &apos;postSchema&apos;, &apos;preStore&apos;, &apos;postStore&apos;],
+  findOneAndDelete: [&apos;preStore&apos;, &apos;postStore&apos;],
+}
+
+/**
+ * Class that defines an entity type for a record accessible in your API.
+ */
+export default class Model {
+  static _normalizeConfig(config) {
+    if (!isPlainObject(config)) {
+      throw new TypeError(&apos;config parameter must be a plain object.&apos;)
+    }
+
+    const { name } = config
+
+    if (typeof name !== &apos;string&apos; || name.length === 0) {
+      throw new TypeError(&apos;config.name parameter must be a non-empty string.&apos;)
+    }
+    if (config.init !== undefined &amp;&amp; typeof config.init !== &apos;function&apos;) {
+      throw new TypeError(&apos;config.init parameter must be a function or undefined.&apos;)
+    }
+    if (config.schema !== null &amp;&amp; !isPlainObject(config.schema)) {
+      throw new TypeError(&apos;config.schema parameter must be a JSON schema or explicitly null.&apos;)
+    }
+    if (config.schema &amp;&amp; config.schema.type !== &apos;object&apos;) {
+      throw new TypeError(&apos;config.schema.type parameter must be object.&apos;)
+    }
+    if (config.optionalUpdateProperties !== undefined &amp;&amp; !Array.isArray(config.optionalUpdateProperties)) {
+      throw new TypeError(&apos;config.optionalUpdateProperties must be an array or undefined.&apos;)
+    }
+    if (config.optionalUpdateProperties) {
+      config.optionalUpdateProperties.forEach((optionalUpdateProperty, i) =&gt; {
+        if (
+          typeof optionalUpdateProperty !== &apos;string&apos; &amp;&amp;
+          (!Array.isArray(optionalUpdateProperty) || !optionalUpdateProperty.every(p =&gt; typeof p === &apos;string&apos;))
+        ) {
+          throw new TypeError(`config.optionalUpdateProperties[${i}] must be a string or array of strings`)
+        }
+      })
+    }
+    if (config.ajvOptions !== undefined &amp;&amp; !isPlainObject(config.ajvOptions)) {
+      throw new TypeError(&apos;config.ajvOptions parameter must be a plain object or undefined.&apos;)
+    }
+    if (config.getAjv !== undefined &amp;&amp; typeof config.getAjv !== &apos;function&apos;) {
+      throw new TypeError(&apos;config.getAjv parameter must be a function or undefined.&apos;)
+    }
+    if (config.policies !== undefined &amp;&amp; !isPlainObject(config.policies)) {
+      throw new TypeError(&apos;config.policies parameter must be a plain object or undefined.&apos;)
+    }
+    if (config.store === null || typeof config.store !== &apos;object&apos;) {
+      throw new TypeError(&apos;config.store parameter must be an object.&apos;)
+    }
+    ;[
+      &apos;create&apos;,
+      &apos;find&apos;,
+      &apos;findOne&apos;,
+      &apos;findOneAndUpdate&apos;,
+      &apos;findOneAndDelete&apos;,
+      &apos;serialize&apos;,
+      &apos;unserialize&apos;,
+    ].forEach(method =&gt; {
+      if (config.store[method] !== undefined &amp;&amp; typeof config.store[method] !== &apos;function&apos;) {
+        throw new TypeError(`config.store.${method} must be a function or undefined.`)
+      }
+    })
+    if (config.route !== undefined &amp;&amp; (typeof config.route !== &apos;string&apos; || config.route === 0)) {
+      throw new TypeError(&apos;config.route parameter must be a non-empty string or undefined.&apos;)
+    }
+    if (config.initialMeta !== undefined &amp;&amp; !isPlainObject(config.initialMeta)) {
+      throw new TypeError(&apos;config.initialMeta parameter must be a plain object or undefined.&apos;)
+    }
+
+    checkForUnrecognizedProperties(&apos;config&apos;, config, [
+      &apos;name&apos;,
+      &apos;init&apos;,
+      &apos;schema&apos;,
+      &apos;optionalUpdateProperties&apos;,
+      &apos;ajvOptions&apos;,
+      &apos;getAjv&apos;,
+      &apos;policies&apos;,
+      &apos;store&apos;,
+      &apos;route&apos;,
+    ])
+    checkForUnrecognizedProperties(&apos;config.policies&apos;, config.policies, STORE_METHODS)
+    forEach(config.policies, (hooks, method) =&gt; {
+      if (typeof hooks === &apos;boolean&apos;) {
+        config.policies[method] = { preSchema: hooks, preStore: hooks }
+      } else if (isPlainObject(hooks)) {
+        checkForUnrecognizedProperties(`config.policies.${method}`, hooks, POLICY_LIFECYCLE_HOOKS[method])
+      } else {
+        throw new TypeError(`config.policies.${method} must be a plain object or a boolean.`)
+      }
+    })
+
+    const normalizedConfig = defaultsDeep(config, {
+      init: noop,
+      schema: null,
+      optionalUpdateProperties: [],
+      ajvOptions: {
+        allErrors: true,
+        format: &apos;full&apos;,
+        removeAdditional: &apos;all&apos;,
+        useDefaults: true,
+        errorDataPath: &apos;property&apos;,
+      },
+      getAjv: noop,
+      policies: reduce(
+        POLICY_LIFECYCLE_HOOKS,
+        (policies, hooks, method) =&gt; {
+          policies[method] = hooks.reduce((methodHooks, hook) =&gt; {
+            methodHooks[hook] = true
+            return methodHooks
+          }, {})
+          return policies
+        },
+        {}
+      ),
+      store: {
+        ...STORE_METHODS.reduce((methods, method) =&gt; {
+          methods[method] = () =&gt; {
+            throw new AutonymError(AutonymError.METHOD_NOT_ALLOWED, `${method} is not implemented for model &quot;${name}&quot;.`)
+          }
+          return methods
+        }, {}),
+        serialize: cloneDeep,
+        unserialize: cloneDeep,
+      },
+      route: pluralize(kebabCase(name)),
+      initialMeta: {},
+    })
+
+    const { init } = normalizedConfig
+    normalizedConfig.init = async () =&gt; init()
+
+    if (normalizedConfig.schema) {
+      const ajv = new Ajv(normalizedConfig.ajvOptions)
+      normalizedConfig.getAjv(ajv)
+
+      const validateAgainstSchema = ajv.compile(normalizedConfig.schema)
+
+      let validateUpdateAgainstSchema = validateAgainstSchema
+      if (normalizedConfig.optionalUpdateProperties.length &gt; 0) {
+        const filteredSchema = cloneDeep(normalizedConfig.schema)
+        normalizedConfig.optionalUpdateProperties.forEach(property =&gt; {
+          const dataPath = Array.isArray(property) ? property : [property]
+          const propertyToRemove = dataPath[dataPath.length - 1]
+
+          let object = filteredSchema
+          dataPath.slice(0, -1).forEach(key =&gt; {
+            if (!object.properties || !object.properties[key]) {
+              throw new TypeError(`Cannot remove property ${dataPath.join(&apos;.&apos;)} as it does not exist on the schema.`)
+            }
+            object = object.properties[key]
+          })
+
+          object.required = object.required.filter(prop =&gt; prop !== propertyToRemove)
+        })
+        validateUpdateAgainstSchema = ajv.compile(filteredSchema)
+      }
+
+      normalizedConfig.validateAgainstSchema = async (data, isUpdate = false) =&gt; {
+        const validatedData = cloneDeep(data)
+        const validateFn = isUpdate ? validateUpdateAgainstSchema : validateAgainstSchema
+        if (!validateFn(validatedData)) {
+          throw new AutonymError(AutonymError.UNPROCESSABLE_ENTITY, `Schema validation for model &quot;${name}&quot; failed.`, {
+            errors: validateFn.errors,
+          })
+        }
+        return validatedData
+      }
+    } else {
+      normalizedConfig.validateAgainstSchema = async data =&gt; data
+    }
+
+    normalizedConfig.store = mapValues(normalizedConfig.store, method =&gt; async (...args) =&gt;
+      method.apply(normalizedConfig.store, args)
+    )
+
+    const { serialize, unserialize } = normalizedConfig.store
+    normalizedConfig.store.serialize = async data =&gt; serialize(data)
+    normalizedConfig.store.unserialize = async data =&gt; unserialize(data)
+
+    return normalizedConfig
+  }
+
+  /**
+   * @param {object} config Configuration.
+   * @param {string} config.name A unique name for the model, like `&apos;user&apos;`.
+   * @param {function(): *|Promise.&lt;*, Error&gt;} [config.init] A function to call when the model is first used.
+   * @param {Schema|null} config.schema A JSON schema to validate data against before passing it to the store
+   * methods, or explicitly `null` to disable schema validation.
+   * @param {Array&lt;string|string[]&gt;} [config.optionalUpdateProperties] A list of properties that are normally required
+   * in the schema but may be optional in a findOneAndUpdate request. This is rarely needed as request data is merged
+   * with the existing record before schema validation occurs, but this can be helpful when properties are converted to
+   * computed properties when saved (e.g. user records that have a passwordHash property and whose password is deleted).
+   * @param {AjvOptions} [config.ajvOptions] Additional options to pass to the Ajv instance.
+   * @param {function(ajv: Ajv): *} A function called when the Ajv object is instantiated. It is passed the Ajv instance
+   * for hooking in custom keywords, etc.
+   * @param {ModelPolicies} [config.policies] Configuration policies.
+   * @param {Store} config.store Configuration store.
+   * @param {string} [config.route] The route to use for requests of this type of record. Defaults to pluralizing
+   * the `name` property and then converting it to kebab-case.
+   * @param {Meta} [config.initialMeta] The initial value of the `meta` object that is passed to the policies and
+   * store methods.
+   * @example
+   * const Post = new Model({
+   *   name: &apos;post&apos;,
+   *   init: Db.connect(),
+   *   schema: {
+   *     type: &apos;object&apos;,
+   *     properties: {
+   *       title: { type: &apos;string&apos; },
+   *       body: { type: &apos;string&apos; },
+   *     },
+   *     require: [&apos;title&apos;, &apos;body&apos;],
+   *   },
+   *   policies: {
+   *     create: {
+   *       preSchema: { and: [getCurrentUserPolicy, canCreatePostPolicy] },
+   *       postSchema: trimPostBodyPolicy,
+   *     },
+   *     find: {
+   *       postStore: addTotalCountHeaderToResponsePolicy,
+   *     },
+   *     findOneAndUpdate: {
+   *       preSchema: { and: [getCurrentUserPolicy, userIsOwnerOfPostPolicy] },
+   *       postSchema: trimPostBodyPolicy,
+   *     },
+   *     findOneAndDelete: {
+   *       preStore: { and: [getCurrentUserPolicy, userIsOwnerOfPostPolicy] },
+   *     },
+   *   },
+   *   store: {
+   *     create: data =&gt; Db.insert(&apos;posts&apos;, data),
+   *     find: () =&gt; Db.selectAll(&apos;posts&apos;),
+   *     findOne: id =&gt; Db.selectOne(&apos;posts&apos;, { id }),
+   *     findOneAndUpdate: (id, data) =&gt; Db.updateWhere(&apos;posts&apos;, { id }, data),
+   *     findOneAndDelete: id =&gt; Db.deleteWhere(&apos;posts&apos;, { id }),
+   *     serialize: data =&gt; mapKeys(data, property =&gt; snakeCase(property)),
+   *     unserialize: data =&gt; mapKeys(data, columnName =&gt; camelCase(columnName)),
+   *   },
+   * })
+   */
+  constructor(config) {
+    this._config = Model._normalizeConfig(config)
+    this._hooks = null
+    this._initialization = null
+  }
+
+  /**
+   * Gets the normalized config.
+   * @returns {object} The normalized config.
+   */
+  getConfig() {
+    return this._config
+  }
+
+  /**
+   * Gets the model name.
+   * @returns {string} The model name.
+   */
+  getName() {
+    return this.getConfig().name
+  }
+
+  /**
+   * Gets the model route.
+   * @returns {string} The model route.
+   */
+  getRoute() {
+    return this.getConfig().route
+  }
+
+  /**
+   * Gets the initial meta.
+   * @returns {Meta} The initial meta.
+   */
+  getInitialMeta() {
+    return this.getConfig().initialMeta
+  }
+
+  /**
+   * Gets the policies.
+   * @returns {ModelPolicies} The policies.
+   */
+  getPolicies() {
+    return this.getConfig().policies
+  }
+
+  /**
+   * Initializes the model if it hasn&apos;t been already.
+   * @returns {Promise.&lt;*, Error&gt;} The result of the initialization.
+   */
+  async init() {
+    if (!this._initialization) {
+      this._initialization = this.getConfig().init()
+    }
+    return this._initialization
+  }
+
+  /**
+   * Creates a new record.
+   * @param {Record} data The properties of the record to create.
+   * @param {Meta} [meta] Additional metadata to pass to the store.
+   * @param {array} [hookArgs] *Used internally.* Arguments to pass into the hooks.
+   * @returns {Promise.&lt;Record, AutonymError&gt;} The new record data.
+   * @example
+   * const data = await Post.create({
+   *   title: &apos;Hello World&apos;,
+   *   body: &apos;This is my first post.&apos;,
+   * })
+   *
+   * console.log(data) // { id: &apos;1&apos;, title: &apos;Hello World&apos;, body: &apos;This is my first post.&apos; }
+   */
+  async create(data, meta = {}, hookArgs) {
+    if (!isPlainObject(data)) {
+      throw new TypeError(&apos;data parameter must be a plain object.&apos;)
+    }
+    if (!isPlainObject(meta)) {
+      throw new TypeError(&apos;meta parameter must be a plain object.&apos;)
+    }
+
+    return this._callWithHooks(
+      &apos;create&apos;,
+      data,
+      async transformedData =&gt; {
+        const serializedData = await this.serialize(transformedData)
+        const result = await this.getConfig().store.create(serializedData, meta, transformedData)
+        return this.unserialize(result)
+      },
+      hookArgs
+    )
+  }
+
+  /**
+   * Finds records.
+   * @param {object} [query] The query to filter by.
+   * @param {Meta} [meta] Additional metadata to pass to the store.
+   * @param {array} [hookArgs] *Used internally.* Arguments to pass into the hooks.
+   * @returns {Promise.&lt;Record[], AutonymError&gt;} The data of the found records.
+   * @example
+   * const data = await Post.find()
+   *
+   * console.log(data) // [{ id: &apos;1&apos;, title: &apos;Hello World&apos;, body: &apos;This is my first post.&apos; }]
+   */
+  async find(query, meta = {}, hookArgs) {
+    if (!isPlainObject(meta)) {
+      throw new TypeError(&apos;meta parameter must be a plain object.&apos;)
+    }
+
+    return this._callWithHooks(
+      &apos;find&apos;,
+      null,
+      async () =&gt; {
+        const results = await this.getConfig().store.find(query, meta)
+        return Promise.all(results.map(async result =&gt; this.unserialize(result)))
+      },
+      hookArgs
+    )
+  }
+
+  /**
+   * Finds a record.
+   * @param {string} id The id of the record to find.
+   * @param {Meta} [meta] Additional metadata to pass to the store.
+   * @param {array} [hookArgs] *Used internally.* Arguments to pass into the hooks.
+   * @returns {Promise.&lt;Record, AutonymError&gt;} The found record data.
+   * @example
+   * const data = await Post.findOne(&apos;1&apos;)
+   *
+   * console.log(data) // { id: &apos;1&apos;, title: &apos;Hello World&apos;, body: &apos;This is my first post.&apos; }
+   */
+  async findOne(id, meta = {}, hookArgs) {
+    if (typeof id !== &apos;string&apos; || id.length === 0) {
+      throw new TypeError(&apos;id parameter must be a non-empty string.&apos;)
+    }
+    if (!isPlainObject(meta)) {
+      throw new TypeError(&apos;meta parameter must be a plain object.&apos;)
+    }
+
+    return this._callWithHooks(
+      &apos;findOne&apos;,
+      null,
+      async () =&gt; {
+        const result = await this.getConfig().store.findOne(id, meta)
+        return this.unserialize(result)
+      },
+      hookArgs
+    )
+  }
+
+  /**
+   * Updates a record.
+   * @param {string} id The id of the record to update.
+   * @param {Record} data The properties to update.
+   * @param {Record} [completeData] The complete record with the properties to update merged in. If omitted, it
+   * will be fetched.
+   * @param {Meta} [meta] Additional metadata to pass to the store.
+   * @param {array} [hookArgs] *Used internally.* Arguments to pass into the hooks.
+   * @returns {Promise.&lt;Record, AutonymError&gt;} The updated record data.
+   * @example
+   * const data = await Post.findOneAndUpdate(&apos;1&apos;, { title: &apos;Test&apos; })
+   *
+   * console.log(data) // { id: &apos;1&apos;, title: &apos;Test&apos;, body: &apos;This is my first post.&apos; }
+   */
+  async findOneAndUpdate(id, data, completeData = null, meta = {}, hookArgs) {
+    if (typeof id !== &apos;string&apos; || id.length === 0) {
+      throw new TypeError(&apos;id parameter must be a non-empty string.&apos;)
+    }
+    if (!isPlainObject(data)) {
+      throw new TypeError(&apos;data parameter must be a plain object.&apos;)
+    }
+    if (completeData &amp;&amp; !isPlainObject(completeData)) {
+      throw new TypeError(&apos;completeData parameter must be a plain object or undefined.&apos;)
+    }
+    if (!isPlainObject(meta)) {
+      throw new TypeError(&apos;meta parameter must be a plain object.&apos;)
+    }
+
+    const fetchedCompleteData = defaultsDeep(data, completeData || (await this.getConfig().store.findOne(id)))
+
+    return this._callWithHooks(
+      &apos;findOneAndUpdate&apos;,
+      fetchedCompleteData,
+      async transformedData =&gt; {
+        const transformedDataToUpdate = filterToProperties(transformedData, data)
+        const [serializedData, serializedCompleteData] = await Promise.all([
+          this.serialize(transformedDataToUpdate),
+          this.serialize(transformedData),
+        ])
+
+        const result = await this.getConfig().store.findOneAndUpdate(
+          id,
+          serializedData,
+          serializedCompleteData,
+          meta,
+          transformedDataToUpdate,
+          transformedData
+        )
+        return this.unserialize(result)
+      },
+      hookArgs
+    )
+  }
+
+  /**
+   * Deletes a record.
+   * @param {string} id The id of the record to delete.
+   * @param {Meta} [meta] Additional metadata to pass to the store.
+   * @param {array} [hookArgs] *Used internally.* Arguments to pass into the hooks.
+   * @returns {Promise.&lt;object, AutonymError&gt;} An object containing an `id` property set to the deleted record&apos;s id.
+   * @example
+   * const data = await Post.findOneAndDelete(&apos;1&apos;)
+   *
+   * console.log(data) // { id: &apos;1&apos; }
+   */
+  async findOneAndDelete(id, meta = {}, hookArgs) {
+    if (typeof id !== &apos;string&apos; || id.length === 0) {
+      throw new TypeError(&apos;id parameter must be a non-empty string.&apos;)
+    }
+    if (!isPlainObject(meta)) {
+      throw new TypeError(&apos;meta parameter must be a plain object.&apos;)
+    }
+
+    return this._callWithHooks(
+      &apos;findOneAndDelete&apos;,
+      null,
+      async () =&gt; {
+        await this.getConfig().store.findOneAndDelete(id, meta)
+        const result = { id }
+        return this.unserialize(result)
+      },
+      hookArgs
+    )
+  }
+
+  /**
+   * Serializes the data for a store method.
+   * @param {Record} data The data to serialize.
+   * @returns {Promise.&lt;SerializedRecord, AutonymError&gt;} The serialized data.
+   * @example
+   * const data = await Post.serialize({ authorId: &apos;42&apos; })
+   *
+   * console.log(data) // { author_id: &apos;42&apos; }
+   */
+  async serialize(data) {
+    try {
+      return this.getConfig().store.serialize(data)
+    } catch (err) {
+      throw AutonymError.fromError(err)
+    }
+  }
+
+  /**
+   * Unserializes the data from a store method.
+   * @param {SerializedRecord} data The data to unserialize.
+   * @returns {Promise.&lt;Record, AutonymError&gt;} The unserialized data.
+   * @example
+   * const data = await Post.unserialize({ author_id: &apos;42&apos; })
+   *
+   * console.log(data) // { authorId: &apos;42&apos; }
+   */
+  async unserialize(data) {
+    try {
+      const unserializedData = await this.getConfig().store.unserialize(data)
+      if (unserializedData &amp;&amp; unserializedData.id != null) {
+        unserializedData.id = String(unserializedData.id)
+      }
+      return unserializedData
+    } catch (err) {
+      throw AutonymError.fromError(err)
+    }
+  }
+
+  /**
+   * Validates the data against the schema.
+   * @param {Record} data The data to validate. This must be a complete record.
+   * @param {string} [method] One of &apos;create&apos;, &apos;find&apos;, &apos;findOne&apos;, &apos;findOneAndUpdate&apos;, or &apos;findOneAndDelete&apos;, which may
+   * determine different schema restrictions based on the configuration.
+   * @returns {Promise.&lt;Record, AutonymError&gt;} Resolves with the validated data, which has unrecognized properties
+   * filtered out and default values added.
+   * @example
+   * const validatedData = await Post.validateAgainstSchema({ title: &apos;Hello World&apos;, xyz: 123 })
+   *
+   * console.log(validatedData) // { title: &apos;Hello World&apos; }
+   */
+  async validateAgainstSchema(data, method) {
+    return this.getConfig().validateAgainstSchema(data, method === &apos;findOneAndUpdate&apos;)
+  }
+
+  /**
+   * *Used internally.* Creates a copy of the model instance with the given lifecycle hooks added to it.
+   * @param {object} hooks A set of lifecycle hooks.
+   * @returns {Model} A copy of the model instance with the given hooks installed.
+   */
+  withHooks(hooks) {
+    return cloneInstance(this, { _hooks: hooks })
+  }
+
+  async _callWithHooks(method, data, fn, hookArgs = []) {
+    try {
+      await this.init()
+
+      let transformedData = data
+      if (data) {
+        transformedData = await this._callHook(method, &apos;preSchema&apos;, hookArgs, transformedData)
+        transformedData = await this.validateAgainstSchema(transformedData, method)
+        transformedData = await this._callHook(method, &apos;postSchema&apos;, hookArgs, transformedData)
+      }
+
+      transformedData = await this._callHook(method, &apos;preStore&apos;, hookArgs, transformedData)
+      transformedData = await fn(transformedData)
+      transformedData = await this._callHook(method, &apos;postStore&apos;, hookArgs, transformedData)
+
+      return transformedData
+    } catch (err) {
+      throw AutonymError.fromError(err)
+    }
+  }
+
+  async _callHook(method, hook, hookArgs, data) {
+    if (this._hooks) {
+      return this._hooks[method][hook](...hookArgs, data)
+    } else {
+      return data
+    }
+  }
+}
+</code></pre>
+
+</div>
+
+<footer class="footer">
+  Generated by <a href="https://esdoc.org">ESDoc<span data-ice="esdocVersion">(1.0.2)</span><img src="./image/esdoc-logo-mini-black.png"></a>
+</footer>
+
+<script src="script/search_index.js"></script>
+<script src="script/search.js"></script>
+<script src="script/pretty-print.js"></script>
+<script src="script/inherited-summary.js"></script>
+<script src="script/test-summary.js"></script>
+<script src="script/inner-link.js"></script>
+<script src="script/patch-for-local.js"></script>
+<script src="https://unpkg.com/es5-shim@4"></script>
+<script src="https://unpkg.com/promise-polyfill@6"></script>
+<script src="https://unpkg.com/whatwg-fetch@2"></script>
+<script src="https://embed.runkit.com"></script>
+<script src="https://unpkg.com/react@15/dist/react.js"></script>
+<script src="https://unpkg.com/react-dom@15/dist/react-dom.js"></script>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+<script src="https://unpkg.com/codemirror@5"></script>
+<script src="https://unpkg.com/codemirror@5/mode/javascript/javascript.js"></script>
+<script src="https://unpkg.com/codemirror@5/addon/edit/matchbrackets.js"></script>
+<script src="https://unpkg.com/codemirror@5/addon/edit/closebrackets.js"></script>
+<script type="text/babel" src="assets/docsAssets/repl.jsx"></script>
+</body>
+</html>
