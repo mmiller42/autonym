@@ -1,6 +1,6 @@
 {
   "name": "autonym",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "A KISS JSON REST API framework that can be mounted to your Express application.",
   "keywords": [
     "autonym",
