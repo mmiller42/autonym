@@ -50,6 +50,19 @@ export default class Model {
         }
       })
     }
+    if (config.computedProperties !== undefined && !Array.isArray(config.computedProperties)) {
+      throw new TypeError('config.computedProperties must be an array or undefined.')
+    }
+    if (config.computedProperties) {
+      config.computedProperties.forEach((computedProperty, i) => {
+        if (
+          typeof computedProperty !== 'string' &&
+          (!Array.isArray(computedProperty) || !computedProperty.every(p => typeof p === 'string'))
+        ) {
+          throw new TypeError(`config.computedProperties[${i}] must be a string or array of strings`)
+        }
+      })
+    }
     if (config.ajvOptions !== undefined && !isPlainObject(config.ajvOptions)) {
       throw new TypeError('config.ajvOptions parameter must be a plain object or undefined.')
     }
@@ -87,6 +100,7 @@ export default class Model {
       'init',
       'schema',
       'optionalUpdateProperties',
+      'computedProperties',
       'ajvOptions',
       'getAjv',
       'policies',
@@ -108,6 +122,7 @@ export default class Model {
       init: noop,
       schema: null,
       optionalUpdateProperties: [],
+      computedProperties: [],
       ajvOptions: {
         allErrors: true,
         format: 'full',
@@ -208,6 +223,9 @@ export default class Model {
    * @param {AjvOptions} [config.ajvOptions] Additional options to pass to the Ajv instance.
    * @param {function(ajv: Ajv): *} A function called when the Ajv object is instantiated. It is passed the Ajv instance
    * for hooking in custom keywords, etc.
+   * @param {Array<string|string[]>} [config.computedProperties] A list of properties that do not appear on the schema
+   * but should still be passed to the store methods. These properties cannot be part of the request body since they
+   * are stripped during schema validation, but they may be set by policies.
    * @param {ModelPolicies} [config.policies] Configuration policies.
    * @param {Store} config.store Configuration store.
    * @param {string} [config.route] The route to use for requests of this type of record. Defaults to pluralizing
@@ -435,7 +453,7 @@ export default class Model {
       'findOneAndUpdate',
       fetchedCompleteData,
       async transformedData => {
-        const transformedDataToUpdate = filterToProperties(transformedData, data)
+        const transformedDataToUpdate = filterToProperties(transformedData, data, this.getConfig().computedProperties)
         const [serializedData, serializedCompleteData] = await Promise.all([
           this.serialize(transformedDataToUpdate),
           this.serialize(transformedData),

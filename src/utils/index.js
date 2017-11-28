@@ -1,4 +1,4 @@
-import { difference, forEach, isPlainObject, reduce } from 'lodash'
+import { difference, forEach, get, isPlainObject, reduce, set } from 'lodash'
 
 export function checkForUnrecognizedProperties(parameterName, object, expectedProperties) {
   if (!object) {
@@ -25,18 +25,18 @@ export function deleteUndefineds(object) {
   })
 }
 
-export function filterToProperties(fullObject, partialObject) {
-  return reduce(
+export function filterToProperties(fullObject, partialObject, additionalProperties = []) {
+  const filteredObject = reduce(
     fullObject,
     (result, value, key) => {
       if (key in partialObject) {
         const partialValue = partialObject[key]
         if (isPlainObject(value) && isPlainObject(partialValue)) {
-          result[key] = filterToProperties(value, partialValue)
+          result[key] = filterToProperties(value, partialValue, null)
         } else if (Array.isArray(value) && Array.isArray(partialValue)) {
           result[key] = partialValue.map((partialValueItem, i) => {
             if (isPlainObject(partialValueItem)) {
-              return filterToProperties(value[i], partialValueItem)
+              return filterToProperties(value[i], partialValueItem, null)
             } else {
               return partialValueItem
             }
@@ -45,8 +45,20 @@ export function filterToProperties(fullObject, partialObject) {
           result[key] = partialValue
         }
       }
+
       return result
     },
     {}
   )
+
+  if (additionalProperties != null) {
+    additionalProperties.forEach(property => {
+      const value = get(partialObject, property)
+      if (value !== undefined) {
+        set(filteredObject, property, value)
+      }
+    })
+  }
+
+  return filteredObject
 }
