@@ -53,7 +53,7 @@ export function filterToProperties(fullObject, partialObject, additionalProperti
 
   if (additionalProperties != null) {
     additionalProperties.forEach(property => {
-      const value = get(partialObject, property)
+      const value = get(fullObject, property)
       if (value !== undefined) {
         set(filteredObject, property, value)
       }
