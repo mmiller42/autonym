@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <base data-ice="baseUrl" href="../../../">
+  <title data-ice="title">src/middleware/createStoreMiddleware.js | Autonym</title>
+  <link type="text/css" rel="stylesheet" href="css/style.css">
+  <link type="text/css" rel="stylesheet" href="css/prettify-tomorrow.css">
+  <script src="script/prettify/prettify.js"></script>
+  <script src="script/manual.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/codemirror@5/lib/codemirror.css">
+<link rel="stylesheet" href="assets/docsAssets/styles.css">
+<meta name="description" content="A KISS JSON REST API framework that can be mounted to your Express application."><meta property="twitter:card" content="summary"><meta property="twitter:title" content="Autonym"><meta property="twitter:description" content="A KISS JSON REST API framework that can be mounted to your Express application."></head>
+<body class="layout-container" data-ice="rootContainer">
+
+<header>
+  <a href="./">Home</a>
+  
+  <a href="identifiers.html">Reference</a>
+  <a href="source.html">Source</a>
+  
+  <div class="search-box">
+  <span>
+    <img src="./image/search.png">
+    <span class="search-input-edge"></span><input class="search-input"><span class="search-input-edge"></span>
+  </span>
+    <ul class="search-result"></ul>
+  </div>
+<a style="position:relative; top:3px;" href="https://github.com/mmiller42/autonym"><img width="20px" src="./image/github.png"></a></header>
+
+<nav class="navigation" data-ice="nav"><div>
+  <ul>
+    
+  <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/AutonymError.js~AutonymError.html">AutonymError</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/Model.js~Model.html">Model</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/Req.js~Req.html">Req</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/Res.js~Res.html">Res</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-createInMemoryStore">createInMemoryStore</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-createModelMiddleware">createModelMiddleware</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-createResponderMiddleware">createResponderMiddleware</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-AjvOptions">AjvOptions</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-AndExpression">AndExpression</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Meta">Meta</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-ModelPolicies">ModelPolicies</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-NotExpression">NotExpression</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Operand">Operand</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-OrExpression">OrExpression</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Policy">Policy</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Record">Record</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Schema">Schema</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-SerializedRecord">SerializedRecord</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Store">Store</a></span></span></li>
+</ul>
+</div>
+</nav>
+
+<div class="content" data-ice="content"><h1 data-ice="title">src/middleware/createStoreMiddleware.js</h1>
+<pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">import { cloneDeep, mapValues } from &apos;lodash&apos;
+import AsyncBooleanExpressionEvaluator from &apos;async-boolean-expression-evaluator&apos;
+import AutonymError from &apos;../AutonymError&apos;
+import Req from &apos;../Req&apos;
+import Res from &apos;../Res&apos;
+import { Router as createRouter } from &apos;express&apos;
+
+export default function createStoreMiddleware(model) {
+  const modelWithHooks = model.withHooks(createPolicyHooks())
+
+  const router = createRouter({ mergeParams: true })
+
+  router.route(&apos;/&apos;).post((req, res, next) =&gt; callStoreMethod(create, req, res, next))
+  router.route(&apos;/&apos;).get((req, res, next) =&gt; callStoreMethod(find, req, res, next))
+  router.route(&apos;/:id&apos;).get((req, res, next) =&gt; callStoreMethod(findOne, req, res, next))
+  router.route(&apos;/:id&apos;).patch((req, res, next) =&gt; callStoreMethod(findOneAndUpdate, req, res, next))
+  router.route(&apos;/:id&apos;).put((req, res, next) =&gt; callStoreMethod(findOneAndUpdate, req, res, next))
+  router.route(&apos;/:id&apos;).delete((req, res, next) =&gt; callStoreMethod(findOneAndDelete, req, res, next))
+
+  return router
+
+  function createPolicyHooks() {
+    return mapValues(model.getPolicies(), hooks =&gt;
+      mapValues(hooks, (expression, hook) =&gt; async (req, res, meta, data) =&gt; {
+        if (data &amp;&amp; (hook === &apos;postSchema&apos; || hook === &apos;preStore&apos;)) {
+          req.setData(data, true)
+        }
+
+        if (hook === &apos;postSchema&apos;) {
+          req._isValidated = true
+        }
+
+        if (hook === &apos;postStore&apos;) {
+          res._isPopulated = true
+          res.setData(data, true)
+        }
+
+        await evaluatePolicies(expression, req, res, meta)
+
+        if (data &amp;&amp; hook === &apos;preSchema&apos;) {
+          return req.getCompleteData()
+        } else if (data &amp;&amp; (hook === &apos;postSchema&apos; || hook === &apos;preStore&apos;)) {
+          return req.getData()
+        } else if (data &amp;&amp; hook === &apos;postStore&apos;) {
+          return res.getData()
+        } else {
+          return null
+        }
+      })
+    )
+  }
+
+  async function evaluatePolicies(expression, req, res, meta) {
+    let lastError = null
+    const evaluator = new AsyncBooleanExpressionEvaluator(async operand =&gt; {
+      if (typeof operand === &apos;function&apos;) {
+        try {
+          await operand(req, res, meta)
+          return true
+        } catch (err) {
+          // `err` may be undefined if this is the result of a `not` expression
+          lastError = err
+          return false
+        }
+      } else if (typeof operand === &apos;boolean&apos;) {
+        if (operand) {
+          return true
+        } else {
+          // If operand is just false, use generic error
+          lastError = new AutonymError(AutonymError.FORBIDDEN, &apos;This action may not be performed.&apos;)
+          return false
+        }
+      } else {
+        throw new TypeError(
+          `Policy operands for model &quot;${model.getName()}&quot; are invalid. Operands may be functions or booleans, received ${typeof operand}.`
+        )
+      }
+    })
+
+    const result = await evaluator.execute(expression)
+    if (!result) {
+      throw lastError || new AutonymError(AutonymError.FORBIDDEN, &apos;This action may not be performed.&apos;)
+    }
+  }
+
+  async function callStoreMethod(method, req, res, next) {
+    const meta = cloneDeep(model.getInitialMeta())
+    const autonymReq = new Req(req, model, meta)
+    const autonymRes = new Res(res, model, meta)
+
+    let autonymError = null
+    try {
+      const { status } = await method(autonymReq, autonymRes, meta)
+      if (autonymRes.getStatus() === null) {
+        autonymRes.setStatus(status)
+      }
+    } catch (err) {
+      autonymError = AutonymError.fromError(err).toClientError()
+    }
+
+    next(autonymError)
+  }
+
+  async function create(req, res, meta) {
+    await modelWithHooks.create(req.getData(), meta, [req, res, meta])
+    return { status: Res.CREATED }
+  }
+
+  async function find(req, res, meta) {
+    await modelWithHooks.find(req.getQuery(), meta, [req, res, meta])
+    return { status: Res.OK }
+  }
+
+  async function findOne(req, res, meta) {
+    await modelWithHooks.findOne(req.getId(), meta, [req, res, meta])
+    return { status: Res.OK }
+  }
+
+  async function findOneAndUpdate(req, res, meta) {
+    const completeData = await req.getCompleteData()
+    await modelWithHooks.findOneAndUpdate(req.getId(), req.getData(), completeData, meta, [req, res, meta])
+    return { status: Res.OK }
+  }
+
+  async function findOneAndDelete(req, res, meta) {
+    await modelWithHooks.findOneAndDelete(req.getId(), meta, [req, res, meta])
+    return { status: Res.OK }
+  }
+}
+</code></pre>
+
+</div>
+
+<footer class="footer">
+  Generated by <a href="https://esdoc.org">ESDoc<span data-ice="esdocVersion">(1.0.2)</span><img src="./image/esdoc-logo-mini-black.png"></a>
+</footer>
+
+<script src="script/search_index.js"></script>
+<script src="script/search.js"></script>
+<script src="script/pretty-print.js"></script>
+<script src="script/inherited-summary.js"></script>
+<script src="script/test-summary.js"></script>
+<script src="script/inner-link.js"></script>
+<script src="script/patch-for-local.js"></script>
+<script src="https://unpkg.com/es5-shim@4"></script>
+<script src="https://unpkg.com/promise-polyfill@6"></script>
+<script src="https://unpkg.com/whatwg-fetch@2"></script>
+<script src="https://embed.runkit.com"></script>
+<script src="https://unpkg.com/react@15/dist/react.js"></script>
+<script src="https://unpkg.com/react-dom@15/dist/react-dom.js"></script>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+<script src="https://unpkg.com/codemirror@5"></script>
+<script src="https://unpkg.com/codemirror@5/mode/javascript/javascript.js"></script>
+<script src="https://unpkg.com/codemirror@5/addon/edit/matchbrackets.js"></script>
+<script src="https://unpkg.com/codemirror@5/addon/edit/closebrackets.js"></script>
+<script type="text/babel" src="assets/docsAssets/repl.jsx"></script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <base data-ice="baseUrl" href="../../">
+  <title data-ice="title">src/AutonymError.js | Autonym</title>
+  <link type="text/css" rel="stylesheet" href="css/style.css">
+  <link type="text/css" rel="stylesheet" href="css/prettify-tomorrow.css">
+  <script src="script/prettify/prettify.js"></script>
+  <script src="script/manual.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/codemirror@5/lib/codemirror.css">
+<link rel="stylesheet" href="assets/docsAssets/styles.css">
+<meta name="description" content="A KISS JSON REST API framework that can be mounted to your Express application."><meta property="twitter:card" content="summary"><meta property="twitter:title" content="Autonym"><meta property="twitter:description" content="A KISS JSON REST API framework that can be mounted to your Express application."></head>
+<body class="layout-container" data-ice="rootContainer">
+
+<header>
+  <a href="./">Home</a>
+  
+  <a href="identifiers.html">Reference</a>
+  <a href="source.html">Source</a>
+  
+  <div class="search-box">
+  <span>
+    <img src="./image/search.png">
+    <span class="search-input-edge"></span><input class="search-input"><span class="search-input-edge"></span>
+  </span>
+    <ul class="search-result"></ul>
+  </div>
+<a style="position:relative; top:3px;" href="https://github.com/mmiller42/autonym"><img width="20px" src="./image/github.png"></a></header>
+
+<nav class="navigation" data-ice="nav"><div>
+  <ul>
+    
+  <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/AutonymError.js~AutonymError.html">AutonymError</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/Model.js~Model.html">Model</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/Req.js~Req.html">Req</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/Res.js~Res.html">Res</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-createInMemoryStore">createInMemoryStore</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-createModelMiddleware">createModelMiddleware</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-createResponderMiddleware">createResponderMiddleware</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-AjvOptions">AjvOptions</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-AndExpression">AndExpression</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Meta">Meta</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-ModelPolicies">ModelPolicies</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-NotExpression">NotExpression</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Operand">Operand</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-OrExpression">OrExpression</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Policy">Policy</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Record">Record</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Schema">Schema</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-SerializedRecord">SerializedRecord</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-typedef">T</span><span data-ice="name"><span><a href="typedef/index.html#static-typedef-Store">Store</a></span></span></li>
+</ul>
+</div>
+</nav>
+
+<div class="content" data-ice="content"><h1 data-ice="title">src/AutonymError.js</h1>
+<pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">import HTTP from &apos;http-status-codes&apos;
+
+/**
+ * Wrapper for any error that occurred in a policy or store method.
+ */
+export default class AutonymError {
+  /**
+   * Code indicating the server could not understand the request due to invalid syntax.
+   * @constant
+   * @type {string}
+   */
+  static BAD_REQUEST = &apos;BAD_REQUEST&apos;
+
+  /**
+   * Code indicating the client does not have access rights to the content.
+   * @constant
+   * @type {string}
+   */
+  static FORBIDDEN = &apos;FORBIDDEN&apos;
+
+  /**
+   * Code indicating the requested store method is not available for this model.
+   * @constant
+   * @type {string}
+   */
+  static METHOD_NOT_ALLOWED = &apos;METHOD_NOT_ALLOWED&apos;
+
+  /**
+   * Code indicating the requested resource does not exist.
+   * @constant
+   * @type {string}
+   */
+  static NOT_FOUND = &apos;NOT_FOUND&apos;
+
+  /**
+   * Code indicating the client must be authenticated to perform this action.
+   * @constant
+   * @type {string}
+   */
+  static UNAUTHORIZED = &apos;UNAUTHORIZED&apos;
+
+  /**
+   * Code indicating the request was improper, i.e. failed schema validation.
+   * @constant
+   * @type {string}
+   */
+  static UNPROCESSABLE_ENTITY = &apos;UNPROCESSABLE_ENTITY&apos;
+
+  /**
+   * Default. Code indicating an unhandled error occurred while the server was processing the request.
+   * @constant
+   * @type {string}
+   */
+  static INTERNAL_SERVER_ERROR = &apos;INTERNAL_SERVER_ERROR&apos;
+
+  /**
+   * The error codes that indicate client request errors, rather than internal errors.
+   * @constant
+   * @type {string[]}
+   */
+  static CLIENT_ERRORS = [
+    AutonymError.BAD_REQUEST,
+    AutonymError.FORBIDDEN,
+    AutonymError.METHOD_NOT_ALLOWED,
+    AutonymError.NOT_FOUND,
+    AutonymError.UNAUTHORIZED,
+    AutonymError.UNPROCESSABLE_ENTITY,
+  ]
+
+  /**
+   * Wraps the given error and returns an instance of AutonymError, or returns the given error if it already is an
+   * AutonymError. If the error object has the property `code`, it will be used as the AutonymError code. If the
+   * error object implements a `toJSON` method, its result will be stored as additional data.
+   * @param {Error} error An error object.
+   * @returns {AutonymError} The instance of AutonymError.
+   * @example
+   * const err = new Error(&apos;Something bad happened&apos;)
+   * const autonymError = AutonymError.fromError(err)
+   * console.log(autonymError.getPayload()) // { message: &apos;An internal server error occurred.&apos; }
+   * @example
+   * const err = new Error(&apos;Something bad happened&apos;)
+   * err.code = AutonymError.BAD_REQUEST
+   * const autonymError = AutonymError.fromError(err)
+   * // Still internal server error until we call `#toClientError()`
+   * console.log(autonymError.getPayload()) // { message: &apos;An internal server error occurred.&apos; }
+   */
+  static fromError(error) {
+    if (error.isAutonymError) {
+      return error
+    } else {
+      const autonymError = new AutonymError(
+        error.code || AutonymError.INTERNAL_SERVER_ERROR,
+        error.message || &apos;An unknown error occurred.&apos;,
+        typeof error.toJSON === &apos;function&apos; ? error.toJSON() : error
+      )
+      autonymError.stack = error.stack
+      return autonymError
+    }
+  }
+
+  /**
+   * @param {string} [code] One of the error code static constants, or any other identifiable value for the error
+   * type. If falsy, will fall back to `AutonymError.INTERNAL_SERVER_ERROR`.
+   * @param {string} message A human-readable description of the error. It will only be passed to the client in a
+   * response if the code is one of `Autonym.CLIENT_ERRORS`.
+   * @param {object} [data] Additional metadata to store on the error.
+   * @example
+   * const autonymError = new AutonymError(null, &apos;Something bad happened&apos;)
+   * @example
+   * const autonymError = new AutonymError(AutonymError.BAD_REQUEST, &apos;Something bad happened&apos;, { invalid: &apos;xyz&apos; })
+   */
+  constructor(code, message, data = {}) {
+    const normalizedCode = code || AutonymError.INTERNAL_SERVER_ERROR
+    this._code = normalizedCode
+    this._message = message
+    this._data = data
+    this.stack = new Error(`[${normalizedCode}] ${message}`).stack
+    this._isClientError = false
+    this.isAutonymError = true
+  }
+
+  /**
+   * Gets the error code.
+   * @returns {string} The error code.
+   */
+  getCode() {
+    return this._code
+  }
+
+  /**
+   * Gets the error message.
+   * @returns {string} The error message.
+   */
+  getMessage() {
+    return this._message
+  }
+
+  /**
+   * Gets the HTTP status code for the error based on its code, or falls back to `AutonymError.INTERNAL_SERVER_ERROR`.
+   * @returns {number} The HTTP status code.
+   */
+  getStatus() {
+    return HTTP[this.getCode() || AutonymError.INTERNAL_SERVER_ERROR] || HTTP.INTERNAL_SERVER_ERROR
+  }
+
+  /**
+   * Gets the error metadata.
+   * @returns {object} The error metadata.
+   */
+  getData() {
+    return this._data
+  }
+
+  /**
+   * Gets the data to send in the HTTP response. It will only return the error data and message if the error has
+   * been converted to a client error and its code is one of `Autonym.CLIENT_ERRORS`.
+   * @returns {object} The error payload. At a minimum, this object will have a `message` property.
+   * @example
+   * const err = new AutonymError(AutonymError.INTERNAL_SERVER_ERROR, &apos;Something bad happened.&apos;, { x: 2 })
+   * console.log(err.getPayload()) // { message: &apos;An internal server error occurred.&apos; }
+   * @example
+   * const err = new AutonymError(AutonymError.BAD_REQUEST, &apos;Something bad happened.&apos;, { x: 2 })
+   * console.log(err.getPayload()) // { x: 2, message: &apos;Something bad happened.&apos; }
+   */
+  getPayload() {
+    if (this.isClientError()) {
+      return { ...this.getData(), message: this.getMessage() }
+    } else {
+      return { message: &apos;An internal server error occurred.&apos; }
+    }
+  }
+
+  /**
+   * Creates a copy of this error with a flag on it indicating it is a client error. Any error thrown will by
+   * default be an internal server error, until it is converted to a client error and it has an applicable error code.
+   * @returns {AutonymError} The client error.
+   * @example
+   * const clientError = (new AutonymError(null, &apos;Something bad happened&apos;)).toClientError()
+   * console.log(clientError.isClientError()) // false
+   * console.log(clientError.getPayload()) // { message: &apos;An internal server error occurred.&apos; }
+   * console.log(clientError.getStatus()) // 500
+   * @example
+   * const clientError = (new AutonymError(AutonymError.BAD_REQUEST, &apos;Something bad happened&apos;)).toClientError()
+   * console.log(clientError.isClientError()) // true
+   * console.log(clientError.getPayload()) // { message: &apos;Something bad happened&apos; }
+   * console.log(clientError.getStatus()) // 400
+   */
+  toClientError() {
+    const clientError = new AutonymError(this.getCode(), this.getMessage(), this.getData())
+    clientError._isClientError = true
+    return clientError
+  }
+
+  /**
+   * Checks if the error is a client error and its code is one of `Autonym.CLIENT_ERRORS`.
+   * @returns {boolean} Whether it is a client error.
+   */
+  isClientError() {
+    return this._isClientError &amp;&amp; AutonymError.CLIENT_ERRORS.includes(this.getCode())
+  }
+}
+</code></pre>
+
+</div>
+
+<footer class="footer">
+  Generated by <a href="https://esdoc.org">ESDoc<span data-ice="esdocVersion">(1.0.2)</span><img src="./image/esdoc-logo-mini-black.png"></a>
+</footer>
+
+<script src="script/search_index.js"></script>
+<script src="script/search.js"></script>
+<script src="script/pretty-print.js"></script>
+<script src="script/inherited-summary.js"></script>
+<script src="script/test-summary.js"></script>
+<script src="script/inner-link.js"></script>
+<script src="script/patch-for-local.js"></script>
+<script src="https://unpkg.com/es5-shim@4"></script>
+<script src="https://unpkg.com/promise-polyfill@6"></script>
+<script src="https://unpkg.com/whatwg-fetch@2"></script>
+<script src="https://embed.runkit.com"></script>
+<script src="https://unpkg.com/react@15/dist/react.js"></script>
+<script src="https://unpkg.com/react-dom@15/dist/react-dom.js"></script>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+<script src="https://unpkg.com/codemirror@5"></script>
+<script src="https://unpkg.com/codemirror@5/mode/javascript/javascript.js"></script>
+<script src="https://unpkg.com/codemirror@5/addon/edit/matchbrackets.js"></script>
+<script src="https://unpkg.com/codemirror@5/addon/edit/closebrackets.js"></script>
+<script type="text/babel" src="assets/docsAssets/repl.jsx"></script>
+</body>
+</html>
