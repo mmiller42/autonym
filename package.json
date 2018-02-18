@@ -60,7 +60,7 @@
     "babel-preset-env": "^1.6.0",
     "body-parser": "^1.0.0",
     "create-github-release": "^1.4.0",
-    "es6-promisify": "^5.0.0",
+    "es6-promisify": "^6.0.0",
     "esdoc": "^1.0.2",
     "esdoc-ecmascript-proposal-plugin": "^1.0.0",
     "esdoc-external-nodejs-plugin": "^1.0.0",
