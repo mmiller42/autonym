@@ -1,3 +1,5 @@
+/* eslint-disable import/no-commonjs, import/no-extraneous-dependencies, import/unambiguous, no-console */
+
 const fs = require('fs')
 const ghPages = require('gh-pages')
 const parseArgs = require('minimist')
@@ -14,8 +16,8 @@ const readFile = promisify(fs.readFile)
 const rename = promisify(fs.rename)
 const rmdir = promisify(rimraf)
 const writeFile = promisify(fs.writeFile)
-const exec = (() => {
-  return function exec(command, args, capture = false) {
+const exec = (() =>
+  function _exec(command, args, capture = false) {
     return new Promise((resolve, reject) => {
       let output = ''
       const childProcess = spawn(command, args, capture ? undefined : { stdio: 'inherit' })
@@ -31,8 +33,7 @@ const exec = (() => {
         }
       })
     })
-  }
-})()
+  })()
 
 async function run() {
   const [, , ...argv] = process.argv

@@ -1,33 +1,27 @@
 {
   "env": {
     "development": {
-      "presets": [["babel-preset-env", { "targets": { "node": "current" } }]],
+      "presets": [["@babel/preset-env", { "targets": { "node": "current" } }]],
       "plugins": [
-        "babel-plugin-syntax-async-generators",
         "babel-plugin-add-module-exports",
-        "babel-plugin-transform-class-properties",
-        "babel-plugin-transform-object-rest-spread",
-        "babel-plugin-transform-runtime"
+        "@babel/plugin-proposal-class-properties",
+        "@babel/plugin-transform-runtime"
       ]
     },
     "test": {
-      "presets": [["babel-preset-env", { "targets": { "node": "4.3.0" } }]],
+      "presets": [["@babel/preset-env", { "targets": { "node": "4.3.0" } }]],
       "plugins": [
-        "babel-plugin-syntax-async-generators",
         "babel-plugin-add-module-exports",
-        "babel-plugin-transform-class-properties",
-        "babel-plugin-transform-object-rest-spread",
-        "babel-plugin-transform-runtime"
+        "@babel/plugin-proposal-class-properties",
+        "@babel/plugin-transform-runtime"
       ]
     },
     "production": {
-      "presets": [["babel-preset-env", { "targets": { "node": "4.3.0" } }]],
+      "presets": [["@babel/preset-env", { "targets": { "node": "4.3.0" } }]],
       "plugins": [
-        "babel-plugin-syntax-async-generators",
         "babel-plugin-add-module-exports",
-        "babel-plugin-transform-class-properties",
-        "babel-plugin-transform-object-rest-spread",
-        "babel-plugin-transform-runtime"
+        "@babel/plugin-proposal-class-properties",
+        "@babel/plugin-transform-runtime"
       ]
     }
   }

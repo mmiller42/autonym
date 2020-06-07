@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 if (process.env.NODE_ENV !== 'development' || process.env.INIT_CWD === process.env.PWD) {
   process.exit(0)
 }
@@ -48,8 +50,8 @@ function rewriteBabelrc() {
                 presets:
                   babelrc.env.development.presets &&
                   babelrc.env.development.presets.map(preset => {
-                    if (Array.isArray(preset) && preset[0] === 'babel-preset-env') {
-                      return ['babel-preset-env', Object.assign({}, preset[1], { targets: { node: 'current' } })]
+                    if (Array.isArray(preset) && preset[0] === '@babel/preset-env') {
+                      return ['@babel/preset-env', Object.assign({}, preset[1], { targets: { node: 'current' } })]
                     }
                     return preset
                   }),
