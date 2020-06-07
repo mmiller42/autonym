@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 if (process.env.NODE_ENV !== 'development' || process.env.INIT_CWD === process.env.PWD) {
   process.exit(0)
 }
