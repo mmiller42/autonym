@@ -50,8 +50,8 @@ function rewriteBabelrc() {
                 presets:
                   babelrc.env.development.presets &&
                   babelrc.env.development.presets.map(preset => {
-                    if (Array.isArray(preset) && preset[0] === 'babel-preset-env') {
-                      return ['babel-preset-env', Object.assign({}, preset[1], { targets: { node: 'current' } })]
+                    if (Array.isArray(preset) && preset[0] === '@babel/preset-env') {
+                      return ['@babel/preset-env', Object.assign({}, preset[1], { targets: { node: 'current' } })]
                     }
                     return preset
                   }),
