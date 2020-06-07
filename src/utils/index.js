@@ -35,7 +35,7 @@ export function filterToProperties(fullObject, partialObject, additionalProperti
           result[key] = filterToProperties(value, partialValue, null)
         } else if (Array.isArray(value) && Array.isArray(partialValue)) {
           result[key] = partialValue.map((partialValueItem, i) => {
-            if (isPlainObject(partialValueItem)) {
+            if (isPlainObject(value[i])) {
               return filterToProperties(value[i], partialValueItem, null)
             } else {
               return partialValueItem

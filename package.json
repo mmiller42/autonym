@@ -75,7 +75,7 @@
     "husky": "^0.14.3",
     "lint-staged": "^6.1.1",
     "minimist": "^1.2.0",
-    "prettier": "^1.7.0",
+    "prettier": "^2.0.5",
     "rimraf": "^2.6.1",
     "semver-sort": "0.0.4"
   },

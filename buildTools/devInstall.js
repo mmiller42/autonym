@@ -12,10 +12,11 @@ const spawn = require('child_process').spawn
 const fs = require('fs')
 const map = require('lodash').map
 const path = require('path')
-const pickBy = require('lodash').pickBy
-
-const npm = process.env.npm_execpath
+const lodash = require('lodash')
 const pwd = process.env.PWD
+
+const omitBy = lodash.omitBy
+const pickBy = lodash.pickBy
 
 function run() {
   return Promise.all([installBabelDependencies(), rewriteBabelrc()]).then(build)
@@ -28,7 +29,7 @@ function installBabelDependencies() {
     .then(pkg => {
       const babelDependencies = pickBy(pkg.devDependencies, (version, module) => /^babel/.test(module))
       const modules = map(babelDependencies, (version, module) => module + '@' + version)
-      return exec(npm, ['install', '--no-save'].concat(modules))
+      return exec('npm', ['install', '--no-save'].concat(modules))
     })
 }
 
@@ -39,14 +40,23 @@ function rewriteBabelrc() {
     .then(babelrc =>
       Object.assign({}, babelrc, {
         env: Object.assign({}, babelrc.env, {
-          development: Object.assign({}, babelrc.env.development, {
-            presets: babelrc.env.development.presets.map(preset => {
-              if (Array.isArray(preset) && preset[0] === 'babel-preset-env') {
-                return ['babel-preset-env', Object.assign({}, preset[1], { targets: { node: 'current' } })]
-              }
-              return preset
-            }),
-          }),
+          development: Object.assign(
+            {},
+            babelrc.env.development,
+            omitBy(
+              {
+                presets:
+                  babelrc.env.development.presets &&
+                  babelrc.env.development.presets.map(preset => {
+                    if (Array.isArray(preset) && preset[0] === 'babel-preset-env') {
+                      return ['babel-preset-env', Object.assign({}, preset[1], { targets: { node: 'current' } })]
+                    }
+                    return preset
+                  }),
+              },
+              val => val === undefined
+            )
+          ),
         }),
       })
     )
@@ -99,8 +109,9 @@ function writeFile(filePath, data) {
 }
 
 function crash(err) {
+  console.warn('Autonym failed to run dev install')
   console.error(err)
-  process.exit(1)
+  process.exit(0)
 }
 
 run().catch(crash)

@@ -75,19 +75,13 @@ export default class Model {
     if (config.store === null || typeof config.store !== 'object') {
       throw new TypeError('config.store parameter must be an object.')
     }
-    ;[
-      'create',
-      'find',
-      'findOne',
-      'findOneAndUpdate',
-      'findOneAndDelete',
-      'serialize',
-      'unserialize',
-    ].forEach(method => {
-      if (config.store[method] !== undefined && typeof config.store[method] !== 'function') {
-        throw new TypeError(`config.store.${method} must be a function or undefined.`)
+    ;['create', 'find', 'findOne', 'findOneAndUpdate', 'findOneAndDelete', 'serialize', 'unserialize'].forEach(
+      method => {
+        if (config.store[method] !== undefined && typeof config.store[method] !== 'function') {
+          throw new TypeError(`config.store.${method} must be a function or undefined.`)
+        }
       }
-    })
+    )
     if (config.route !== undefined && (typeof config.route !== 'string' || config.route === 0)) {
       throw new TypeError('config.route parameter must be a non-empty string or undefined.')
     }
